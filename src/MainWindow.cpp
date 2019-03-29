@@ -21,6 +21,8 @@
 #include "ShpMeshGeometry.h"
 #include <shapefil.h>
 #include <Qt3DExtras/QPerVertexColorMaterial>
+#include <QtCore/QFileInfo>
+#include <QtCore/QDir>
 
 using namespace Qt3DCore;
 using namespace Qt3DRender;
@@ -99,6 +101,8 @@ MainWindow::~MainWindow()
 	//delete mRootEntity;
 }
 
+void recurseDirLoad(const QFileInfo info, QEntity *rootEntity);
+
 QEntity *MainWindow::createScene(const QString &path)
 {
 //	QCylinderMesh *cylinderMesh = new QCylinderMesh(mRootEntity);
@@ -136,11 +140,67 @@ QEntity *MainWindow::createScene(const QString &path)
 
 	if (!path.isEmpty())
 	{
-		Qt3DCore::QEntity *entity = loadShp(path);
-		entity->setParent(mRootEntity);
+		QFileInfo fileInfo(path);
+		if (fileInfo.isDir())
+		{
+			qDebug() << "got dir: " << path;
+
+			recurseDirLoad(fileInfo, mRootEntity);
+
+			//Qt3DCore::QEntity *entity = loadShp(path);
+			//entity->setParent(mRootEntity);
+		}
 	}
 
 	return mRootEntity;
+}
+
+void dirLoad(const QString &dirName, QEntity *rootEntity)
+{
+	qDebug() << "dirLoad: " << dirName;
+
+	QEntity *shpEntity = loadShp(dirName);
+	shpEntity->setParent(rootEntity);
+}
+
+void recurseDirLoad(const QFileInfo info, QEntity *rootEntity)
+{
+	qDebug() << "recurseDirLoad: " << info;
+
+	if(!info.isDir())
+	{
+		qDebug() << " not a dir!";
+		return;
+	}
+
+	QDir dir(info.filePath());
+	qDebug() << " dir: " << dir;
+
+	QFileInfoList fileInfoList = dir.entryInfoList(
+			QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Readable);
+
+	qDebug() << " infoList: " << fileInfoList;
+
+	for (QFileInfo entInfo: fileInfoList)
+	{
+		qDebug() << " entry: " << entInfo;
+
+		if(entInfo.isDir())
+		{
+			recurseDirLoad(entInfo, rootEntity);
+		}
+		else
+		{
+			//qDebug() << " file: suffix=" << entInfo.suffix();
+			if (entInfo.suffix() == "shp" || entInfo.suffix() == "shx")
+			{
+				QFileInfo fileInfo(entInfo.dir(), entInfo.baseName());
+
+				dirLoad(fileInfo.filePath(), rootEntity);
+				return;
+			}
+		}
+	}
 }
 
 QCamera *MainWindow::createCamera()
@@ -213,13 +273,16 @@ Qt3DCore::QEntity *MainWindow::rootEntity()
 }
 
 
-Qt3DCore::QEntity *loadShp(const QString &path)
+Qt3DCore::QEntity *loadShp(const QString &path, const float rot = 0.0f)
 {
+	qDebug() << "loadShp: " << path;
+
 	Qt3DCore::QEntity *customMeshEntity = new Qt3DCore::QEntity();
 	customMeshEntity->setObjectName("customMeshEntity");
 
 	Qt3DCore::QTransform *transform = new Qt3DCore::QTransform;
 	transform->setScale(0.01f); // ??
+	transform->setRotationY(rot);
 	transform->setTranslation(QVector3D(0, 0, 0.0f));
 
 	QMaterial *material = new QPerVertexColorMaterial(customMeshEntity);
