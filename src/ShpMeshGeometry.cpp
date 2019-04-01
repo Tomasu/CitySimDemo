@@ -10,8 +10,15 @@
 #include <iomanip>
 #include <iostream>
 #include <QtCore/QSizeF>
+#include <gdal_priv.h>
+#include <ogrsf_frmts.h>
+#include <QtGui/QPainter>
+#include <QtCore/QFileInfo>
+#include <QtCore/QDir>
 #include "ShpMeshGeometry.h"
 #include "LocUtil.h"
+#include "GeometryBuilder.h"
+#include "Constants.h"
 
 using namespace Qt3DRender;
 using namespace Qt3DCore;
@@ -31,7 +38,7 @@ SHPMeshGeometry::SHPMeshGeometry(const QString &path, QNode *parent) : QGeometry
 	mPosAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
 	mPosAttribute->setVertexSize(VTX_POS_SIZE);
 	mPosAttribute->setByteOffset(0);
-	mPosAttribute->setByteStride(ELEMENT_STRIDE);
+	mPosAttribute->setByteStride(VTX_STRIDE);
 	//posAttribute->setCount(numVerticies);
 	mPosAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
 
@@ -40,25 +47,25 @@ SHPMeshGeometry::SHPMeshGeometry(const QString &path, QNode *parent) : QGeometry
 	//mColorAttribute->setBuffer(vertexBuffer);
 	mColorAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
 	mColorAttribute->setVertexSize(VTX_COLOR_SIZE);
-	mColorAttribute->setByteOffset(VTX_POS_SIZE * sizeof(float));
-	mColorAttribute->setByteStride(ELEMENT_STRIDE);
+	mColorAttribute->setByteOffset(VTX_POS_SIZE * sizeof(VTX_TYPE));
+	mColorAttribute->setByteStride(VTX_STRIDE);
 	//mColorAttribute->setCount(numVerticies);
 	mColorAttribute->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
 
-	mIndexAttribute = new Qt3DRender::QAttribute(this);
-	mIndexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
-	//mIndexAttribute->setBuffer(indexBuffer);
-	mIndexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
-	mIndexAttribute->setVertexSize(1);
-	mIndexAttribute->setByteOffset(0);
-	mIndexAttribute->setByteStride(0);
+//	mIndexAttribute = new Qt3DRender::QAttribute(this);
+//	mIndexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+//	//mIndexAttribute->setBuffer(indexBuffer);
+//	mIndexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
+//	mIndexAttribute->setVertexSize(1);
+//	mIndexAttribute->setByteOffset(0);
+//	mIndexAttribute->setByteStride(0);
 	//mIndexAttribute->setCount(indexDataIdx);
 
 	loadMesh(path);
 
 	addAttribute(mPosAttribute);
 	addAttribute(mColorAttribute);
-	addAttribute(mIndexAttribute);
+//	addAttribute(mIndexAttribute);
 }
 
 SHPMeshGeometry::~SHPMeshGeometry()
@@ -84,159 +91,461 @@ static double measure(float lat1, float lon1, float lat2, float lon2)
 	return d * 1000; // meters
 }
 
+int countPoints(OGRGeometry *geom)
+{
+	OGRCurve *curve = dynamic_cast<OGRCurve*>(geom);
+
+	if (curve != nullptr)
+	{
+		return curve->getNumPoints();
+	}
+
+	OGRGeometryCollection *collection = dynamic_cast<OGRGeometryCollection*>(geom);
+	if (collection != nullptr)
+	{
+		int numGeom = collection->getNumGeometries();
+
+		int numPoints = 0;
+		for (int i = 0; i < numGeom; ++i)
+		{
+			numPoints += countPoints(collection->getGeometryRef(i));
+		}
+
+		return numPoints;
+	}
+
+	OGRCurvePolygon *curvePolygon = dynamic_cast<OGRCurvePolygon*>(geom);
+	if (curvePolygon != nullptr)
+	{
+		int numIntGeom = curvePolygon->getNumInteriorRings();
+		int numGeom = numIntGeom + 1;
+
+		int numPoints = countPoints(curvePolygon->getExteriorRingCurve());
+
+		for (int i = 0; i < numIntGeom; ++i)
+		{
+			OGRCurve *curve = curvePolygon->getInteriorRingCurve(i);
+			numPoints += countPoints(curve);
+		}
+
+		return numPoints;
+	}
+
+	qDebug() << "ERROR: UNKNOWN GEOMETRY: " << geom->getGeometryName();
+	exit(1);
+}
+
+void reportGeometry(const QString &prefix, OGRGeometry *geom)
+{
+	OGRCurve *curve = dynamic_cast<OGRCurve*>(geom);
+
+	if (curve != nullptr)
+	{
+		printf("%s%s (%d points)\n", prefix.toLatin1().data(), curve->getGeometryName(), curve->getNumPoints());
+		return;
+	}
+
+	OGRGeometryCollection *collection = dynamic_cast<OGRGeometryCollection*>(geom);
+	if (collection != nullptr)
+	{
+		int numGeom = collection->getNumGeometries();
+		printf("%s%s (%d geoms)\n", prefix.toLatin1().data(), collection->getGeometryName(), numGeom);
+
+		for (int i = 0; i < numGeom; ++i)
+		{
+			reportGeometry(prefix + "  ", collection->getGeometryRef(i));
+		}
+
+		return;
+	}
+
+	OGRCurvePolygon *curvePolygon = dynamic_cast<OGRCurvePolygon*>(geom);
+	if (curvePolygon != nullptr)
+	{
+		int numIntGeom = curvePolygon->getNumInteriorRings();
+		int numGeom = numIntGeom + 1;
+
+		printf("%s%s (%d rings)\n", prefix.toLatin1().data(), curvePolygon->getGeometryName(), numGeom);
+
+		reportGeometry(prefix + "  ", curvePolygon->getExteriorRingCurve());
+
+		for (int i = 0; i < numIntGeom; ++i)
+		{
+			OGRCurve *curve = curvePolygon->getInteriorRingCurve(i);
+			reportGeometry(prefix + "  ", curve);
+		}
+
+		return;
+	}
+
+	qDebug() << "ERROR: UNKNOWN GEOMETRY: " << geom->getGeometryName();
+	exit(1);
+}
+
 void SHPMeshGeometry::loadMesh(const QString &path)
 {
-	SHPHandle shpHandle;
+	QString shpPath = path + ".shp";
+	GDALDataset *dataset =
+			static_cast<GDALDataset *>(GDALOpenEx(shpPath.toLatin1().data(),
+					GDAL_OF_READONLY | GDAL_OF_VECTOR | GDAL_OF_VERBOSE_ERROR, NULL, NULL, NULL));
 
-	shpHandle = SHPOpen(path.toLatin1().data(), "rb");
-
-	int numEntities = 0;
-	int shapeType = -1;
-	double padMinBound[4];
-	double padMaxBound[4];
-
-	SHPGetInfo(shpHandle, &numEntities, &shapeType, padMinBound, padMaxBound);
-
-	qDebug() << "loaded " << path << " with " << numEntities << " entities and type " << SHPTypeName(shapeType);
-	qDebug() << " bounds min: " << shpHandle->adBoundsMin[0] << ", " << shpHandle->adBoundsMin[1] << ", " << shpHandle->adBoundsMin[2];
-	qDebug() << " bounds max: " << shpHandle->adBoundsMax[0] << ", " << shpHandle->adBoundsMax[1] << ", " << shpHandle->adBoundsMax[2];
-
-	QVector3D origin = DegToCartesian(padMinBound[1], padMinBound[0]);
-	QVector3D originMax = DegToCartesian(padMaxBound[1], padMaxBound[0]);
-
-	QVector3D size = originMax - origin;
-
-	std::cout << std::setprecision(10) << "origin: " << origin.x() << ", " << origin.y()
-		<< " max: " << originMax.x() << ", " << originMax.y()
-		<< " width: " << size.x() << " height: " << size.y()
-		<< std::endl;
-
-	SHPObject *obj = SHPReadObject(shpHandle, 0);
-	if (obj != nullptr)
+	if (dataset == nullptr)
 	{
-		qDebug() << "obj: type= " << SHPTypeName(obj->nSHPType) << " verts=" << obj->nVertices;// << obj->padfX[0];
+		qDebug() << "error opening with gdal?!";
+		return;
+	}
 
-		for (int i = 0; i < obj->nParts; i++)
+	int numLayers = dataset->GetLayerCount();
+
+	OGRSpatialReference sourceSrs(dataset->GetProjectionRef());
+
+	OGRSpatialReference wgsSrs;
+	wgsSrs.SetProjCS("UTM 11 / WGS84");
+	wgsSrs.SetWellKnownGeogCS("WGS84");
+	wgsSrs.SetUTM(11);
+
+	OGRSpatialReference mercSrs;
+	OGRErr retr = mercSrs.importFromEPSG(3776);
+	//mercSrs.SetProjCS("Mercator Srs");
+//	OGRErr ret = mercSrs.SetWellKnownGeogCS("EPSG:3857");
+	if (retr != OGRERR_NONE)
+	{
+		qDebug() << " couldnt get well known CS for transform... ";
+		return;
+	}
+//	mercSrs.SetUTM(11);
+
+	qDebug() << " num layers: " << numLayers << " projRef: " << dataset->GetProjectionRef();
+
+	if (numLayers < 1)
+	{
+		qDebug() << "ERROR: no layers?!?!";
+		return;
+	}
+
+	int numPoints = 0;
+	for (auto layer: dataset->GetLayers())
+	{
+		layer->ResetReading();
+		layer->SetSpatialFilter(nullptr);
+
+		OGRFeatureDefn *layerDefn = layer->GetLayerDefn();
+
+		int layerDefnFieldCount = layerDefn->GetFieldCount();
+
+		printf("Layer: %s (%s)\n", layer->GetName(), layerDefn->GetName());
+
+		qDebug() << " geom field count: " << layerDefn->GetGeomFieldCount();
+
+		for( int iAttr = 0; iAttr < layerDefn->GetFieldCount(); iAttr++ )
 		{
-			int ptype = obj->panPartType[i];
-			int pstart = obj->panPartStart[i];
+			OGRFieldDefn *poField = layerDefn->GetFieldDefn(iAttr);
+			const char* pszType = (poField->GetSubType() != OFSTNone)
+										 ? CPLSPrintf(
+							"%s(%s)",
+							poField->GetFieldTypeName(poField->GetType()),
+							poField->GetFieldSubTypeName(poField->GetSubType()))
+										 : poField->GetFieldTypeName(poField->GetType());
+			printf("  %s: %s (%d.%d)",
+					 poField->GetNameRef(),
+					 pszType,
+					 poField->GetWidth(),
+					 poField->GetPrecision());
+			if( !poField->IsNullable() )
+				printf(" NOT NULL");
+			if( poField->GetDefault() != nullptr )
+				printf(" DEFAULT %s", poField->GetDefault());
+			printf("\n");
+		}
 
-			qDebug() << " part " << SHPPartTypeName(ptype) << " start=" << pstart;
-
-			for (int j = pstart; j < obj->nVertices; j++)
+		const int geomFieldCount =
+				layer->GetLayerDefn()->GetGeomFieldCount();
+		if( geomFieldCount > 1 )
+		{
+			for(int iGeom = 0;iGeom < geomFieldCount; iGeom ++ )
 			{
-				QVector3D pos = DegToCartesian(obj->padfY[i], obj->padfX[i]);
-				//double pos[2] = { 0.0f, 0.0f };
-				//LatLonToUTMXY(DegToRad(obj->padfX[i]), DegToRad(obj->padfY[i]), zone, pos);
-
-				QVector3D diff = pos - origin;
-
-				//double x = (obj->padfX[j] - padMinBound[0])*10;
-				//double y = (obj->padfY[j] - padMinBound[1])*10;
-				//double z = (obj->padfZ[j] - padMinBound[2])*10;
-				std::cout << std::setprecision(10) << " pt vtx (" << pos.x() << ", " << pos.y() << ") " << " conv (" << diff.x() << ", " << diff.y() /* << ", " << z */ << ")" << std::endl;
+				OGRGeomFieldDefn* poGFldDefn =
+						layer->GetLayerDefn()->GetGeomFieldDefn(iGeom);
+				printf("Geometry (%s): %s\n", poGFldDefn->GetNameRef(),
+						 OGRGeometryTypeToName(poGFldDefn->GetType()));
 			}
 		}
-	}
-
-	int numVerticies = 0;
-	int numIndicies = 0;
-	for (int i = 0; i < numEntities; i++)
-	{
-		SHPObject *obj = SHPReadObject(shpHandle, i);
-		numVerticies += obj->nVertices; // line segments. share verticies.
-		numIndicies += (obj->nVertices * 2); //+ obj->nParts; // double num verticies
-	}
-
-	QByteArray vertexBufferData;
-	// position and color (and normals...)
-	vertexBufferData.resize(numVerticies * (VTX_POS_SIZE + VTX_COLOR_SIZE /*+ 3*/) * sizeof(float));
-
-	float *rawVertexArray = reinterpret_cast<float*>(vertexBufferData.data());
-	int idx = 0;
-
-	QByteArray indexBufferData;
-	indexBufferData.resize(numIndicies * sizeof(uint));
-
-	uint *rawIndexArray = reinterpret_cast<uint *>(indexBufferData.data());
-	int indexDataIdx = 0;
-
-	srand(time(nullptr));
-
-	int curVertex = 0;
-
-	for (int i = 0; i < numEntities; i++)
-	{
-		SHPObject *obj = SHPReadObject(shpHandle, i);
-
-		float redComp = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-		float greenComp = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-		float blueComp = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-		QVector3D entityColor(redComp, greenComp, blueComp);
-
-		if (obj != nullptr)
+		else
 		{
-			//qDebug() << "obj: type= " << SHPTypeName(obj->nSHPType) << " verts=" << obj->nVertices;// << obj->padfX[0];
+			printf(" Geometry: %s\n",
+					 OGRGeometryTypeToName(layer->GetGeomType()));
+		}
 
-			int curIdxStart = curVertex;
+		for(int iGeom = 0;iGeom < geomFieldCount; iGeom ++ )
+		{
+			OGRGeomFieldDefn* poGFldDefn =
+					layer->GetLayerDefn()->GetGeomFieldDefn(iGeom);
+			if( geomFieldCount == 1 &&
+				 EQUAL(poGFldDefn->GetNameRef(), "") &&
+				 poGFldDefn->IsNullable() )
+				break;
+			printf("Geometry Column ");
+			if( geomFieldCount > 1 )
+				printf("%d ", iGeom + 1);
+			if( !poGFldDefn->IsNullable() )
+				printf("NOT NULL ");
+			printf("= %s\n", poGFldDefn->GetNameRef());
+		}
 
-			for (int i = 0; i < obj->nVertices; i++)
+		OGRSpatialReference *layerSpatialRef = layer->GetSpatialRef();
+
+		OGRCoordinateTransformation *coordTransform = OGRCreateCoordinateTransformation(layerSpatialRef, &mercSrs);
+
+		OGRwkbGeometryType origGeomType = layer->GetGeomType();
+		OGRwkbGeometryType geometryType = wkbFlatten(origGeomType);
+
+		qDebug() << " Flattened Type: " << OGRGeometryTypeToName(geometryType);
+
+		OGREnvelope oExt;
+		if( geomFieldCount > 1 )
+		{
+			for( int iGeom = 0;iGeom < geomFieldCount; iGeom ++ )
 			{
-				QVector3D pos = DegToCartesian(obj->padfY[i], obj->padfX[i]);
-				QVector3D diff = pos - origin;
+				if( layer->GetExtent(iGeom, &oExt, TRUE) == OGRERR_NONE )
+				{
+					OGRGeomFieldDefn* poGFldDefn =
+							layer->GetLayerDefn()->GetGeomFieldDefn(iGeom);
+					CPLprintf(" Extent (%s): (%f, %f) - (%f, %f)\n",
+								 poGFldDefn->GetNameRef(),
+								 oExt.MinX, oExt.MinY, oExt.MaxX, oExt.MaxY);
+				}
+			}
+		}
+		else if( layer->GetExtent(&oExt, TRUE) == OGRERR_NONE )
+		{
+			CPLprintf(" Extent: (%f, %f) - (%f, %f)\n",
+						 oExt.MinX, oExt.MinY, oExt.MaxX, oExt.MaxY);
+		}
 
-				rawVertexArray[idx++] = diff.x(); // / 10.0f;
-				rawVertexArray[idx++] = diff.y(); // / 10.0f;
-				rawVertexArray[idx++] = 0.0f;
+		OGREnvelope envelope;
+		OGRErr ret = layer->GetExtent(&envelope);
+		if (ret != OGRERR_NONE)
+		{
+			qDebug() << "ERROR: failed to get extent!";
+			return;
+		}
 
-//				rawVertexArray[idx++] = (obj->padfX[i] - padMinBound[0]) * 1000;
-//				rawVertexArray[idx++] = (obj->padfY[i] - padMinBound[1]) * 1000;
-//				rawVertexArray[idx++] = (obj->padfZ[i] - padMinBound[2]) * 1000;
+		qDebug() << " Extent: "
+			<< envelope.MinX << ", " << envelope.MinY << ", "
+			<< envelope.MaxX << ", " << envelope.MaxY;
 
-				rawVertexArray[idx++] = entityColor.x();
-				rawVertexArray[idx++] = entityColor.y();
-				rawVertexArray[idx++] = entityColor.z();
+		double extentX[2] = { envelope.MinX, envelope.MaxX };
+		double extentY[2] = { envelope.MinY, envelope.MaxY };
+		double extentZ[2] = { 0.0f, 0.0f };
+		coordTransform->Transform(2, extentX, extentY, extentZ );
 
-				curVertex++;
+		double width = extentX[1] - extentX[0];
+		double height = extentY[1] - extentY[0];
+
+		GeometryBuilder geometryBuilder(extentX[0], extentY[0], width, height);
+
+		mOriginX = extentX[0];
+		mOriginY = extentY[0];
+
+		qDebug() << " extentc: " << extentX[0] << ", " << extentY[0] << ", " << extentX[1] << ", " << extentY[1];
+
+		qDebug() << " size: " << extentX[1] - extentX[0] << ", " << extentY[1] - extentY[0];
+
+		qDebug() << " rasters: " << dataset->GetRasterCount();
+
+//		int featCount = 0;
+//
+//		for (auto &feat: dataset->GetFeatures())
+//		{
+//			featCount++;
+//		}
+//
+//		qDebug() << " features: " << featCount;
+
+
+		qDebug() << " num features: " << layer->GetFeatureCount(1);
+
+		char *pszWKT;
+		if (layerSpatialRef == NULL)
+			pszWKT = CPLStrdup("(unknown)");
+		else
+		{
+			layerSpatialRef->exportToPrettyWkt(&pszWKT);
+		}
+
+		printf(" SRS WKT:\n%s\n", pszWKT);
+		CPLFree(pszWKT);
+
+		if (strlen(layer->GetFIDColumn()) > 0)
+			printf("FID Column = %s\n",
+					 layer->GetFIDColumn());
+
+		if (strlen(layer->GetGeometryColumn()) > 0)
+			printf("Geometry Column = %s\n",
+					 layer->GetGeometryColumn());
+
+		layer->ResetReading();
+		OGRFeature *poFeature = nullptr;
+		int countedFeatures = 0;
+
+		while ((poFeature = layer->GetNextFeature()))
+		{
+			if (poFeature->GetGeomFieldCount() != 1)
+			{
+				qDebug() << " feature geom field cnt: " << poFeature->GetGeomFieldCount();
 			}
 
-			for (int i = 0; i < obj->nParts; i++)
+			OGRGeometry *ref = poFeature->GetGeomFieldRef(0);
+			if (ref == nullptr)
 			{
-				int ptype = obj->panPartType[i];
-				int pstart = obj->panPartStart[i];
+				qDebug() << " geom field ref == null";
+			}
 
-				//qDebug() << " part " << SHPPartTypeName(ptype) << " start=" << pstart;
+			OGRGeometry *geometry = poFeature->GetGeometryRef();
+			if (geometry == nullptr)
+			{
+				qDebug() << " ERROR no geometry? ERROR ";
+				continue;
+			}
 
-				for (int j = pstart; j < obj->nVertices-1; j++)
+			if (ref == geometry)
+			{
+				//qDebug() << " geomfieldref == geometry";
+			}
+			else
+			{
+				qDebug() << " geomfieldref != geometry";
+			}
+
+			//poFeature->DumpReadable(nullptr, nullptr);
+
+			countedFeatures++;
+
+			//OGRSpatialReference *spatialRef = geometry->getSpatialReference();
+			//qDebug() << " spacialRef: " << spatialRef->GetName();
+
+			geometry->transform(coordTransform);
+
+			//OGRGeometry *polygonized = geometry->Polygonize();
+
+			//qDebug() << " type: " << geometry->getGeometryName();
+
+			OGRwkbGeometryType type = geometry->getGeometryType();
+			OGRwkbGeometryType flattenedType = wkbFlatten(type);
+
+//			if (type != flattenedType)
+//			{
+//				printf(" type(%s) != flattenedType(%s)\n", OGRGeometryTypeToName(type), OGRGeometryTypeToName(flattenedType));
+//			}
+
+			numPoints += countPoints(geometry);
+
+			QVector4D color(0.0f, 0.0f, 0.0f, 1.0f);
+
+			if (poFeature->GetFID() == 32675) {
+				qDebug("got magic thing:");
+				poFeature->DumpReadable(nullptr, nullptr);
+				geometry->dumpReadable(nullptr, nullptr);
+				color = QVector4D(1.0f, 0.0f, 0.0f, 1.0f);
+			}
+
+			if (type == wkbLineString)
+			{
+				geometryBuilder.addLineString(geometry->toLineString(), color);
+			}
+			else if (type == wkbMultiLineString || type == wkbMultiLineString25D)
+			{
+				qDebug() << " multiline string!";
+			}
+			else if (type == wkbPolygon || type == wkbPolygon25D)
+			{
+				OGRPolygon *polygon = geometry->toPolygon();
+				if (polygon->getExteriorRing() == nullptr)
 				{
-					rawIndexArray[indexDataIdx++] = j + curIdxStart;
-					rawIndexArray[indexDataIdx++] = j + curIdxStart + 1;
-
-//					float x = (obj->padfX[j] - padMinBound[0]) * 100;
-//					float y = (obj->padfY[j] - padMinBound[1]) * 100;
-//					float z = (obj->padfZ[j] - padMinBound[2]) * 100;
-
-					//qDebug() << " pt (" << x << ", " << y << ", " << z << ")";
+					qDebug() << " ERROR: polygon with no exterior ring??";
 				}
 
-				//rawIndexArray[indexDataIdx++] = 65535;
+				geometryBuilder.addPolygon(polygon);
+			}
+			else if (type == wkbMultiPolygon)
+			{
+				OGRMultiPolygon *multiPolygon = geometry->toMultiPolygon();
+				int numGeom = multiPolygon->getNumGeometries();
+				if (numGeom < 1)
+				{
+					qDebug() << " ERROR: multi polygon with no polygons?";
+				}
+
+//			for (int i = 0; i < numGeom; ++i)
+//			{
+//				OGRGeometry *poly = multiPolygon->getGeometryRef(i);
+//				if (poly->getGeometryType() != wkbPolygon && poly->getGeometryType() != wkbPolygon25D)
+//				{
+//					qDebug() << " UNSUPPORTED GEOM TYPE FOR MULTIPOLY: " << poly->getGeometryName();
+//				}
+//				geometryBuilder.addPolygon(poly->toPolygon());
+//			}
+
+				for (auto &geom: *multiPolygon)
+				{
+					if (geom->getGeometryType() != wkbPolygon && geom->getGeometryType() != wkbPolygon25D)
+					{
+						qDebug() << " UNSUPPORTED GEOM TYPE FOR MULTIPOLY: " << geom->getGeometryName();
+					}
+					geometryBuilder.addPolygon(geom->toPolygon());
+				}
+
+			}
+			else
+			{
+				qDebug() << " UNSUPPORTED GEOMETRY TYPE >:(" << geometry->getGeometryName() << "("
+							<< geometry->getGeometryType() << ")";
 			}
 		}
+
+		printf(" counted features: %d\n", countedFeatures);
+
+//		if (featCount != countedFeatures)
+//		{
+//			printf("featCount(%d) != countedFeatures(%d)!\n", featCount, countedFeatures);
+//		}
+
+		qDebug() << " geom bounds: " << geometryBuilder.getMinPos() << ", " << geometryBuilder.getMaxPos();
+
+		qDebug() << " counted points: " << numPoints << " builder points: " << geometryBuilder.getNumVerticies();
+
+		int expectedIndexes = numPoints + countedFeatures;
+
+		qDebug() << " expected indexes: " << (expectedIndexes) << " builder indexes: " << geometryBuilder.getNumIndicies();
+
+		QString layerFileName = QString(layer->GetName()) + ".png";
+		QFileInfo fileInfo = QFileInfo(path);
+		fileInfo.setFile(layerFileName);
+
+		//QPixmap *pixmap = geometryBuilder.getPixmap();
+		//qDebug() << " saving (" << pixmap->width() << "," << pixmap->height() << ") pixmap to: " << fileInfo;
+		//pixmap->save(fileInfo.filePath());
+
+		fileInfo.refresh();
+
+		qDebug() << " saved pixmap to: " << fileInfo;
+
+		mVertexBuffer->setData(geometryBuilder.getVerticies());
+		mIndexBuffer->setData(geometryBuilder.getIndicies());
+
+		mPosAttribute->setBuffer(mVertexBuffer);
+		mPosAttribute->setCount(geometryBuilder.getNumVerticies());
+
+		mColorAttribute->setBuffer(mVertexBuffer);
+		mColorAttribute->setCount(geometryBuilder.getNumVerticies());
+
+		mNumVerticies = geometryBuilder.getNumVerticies();
+
+		//mIndexAttribute->setBuffer(mIndexBuffer);
+		//mIndexAttribute->setCount(geometryBuilder.getNumIndicies());
+
+		qDebug() << "done with layer.";
 	}
-
-	mVertexBuffer->setData(vertexBufferData);
-	mIndexBuffer->setData(indexBufferData);
-
-	mPosAttribute->setBuffer(mVertexBuffer);
-	mPosAttribute->setCount(numVerticies);
-
-	mColorAttribute->setBuffer(mVertexBuffer);
-	mColorAttribute->setCount(numVerticies);
-
-	mNumVerticies = numVerticies;
-
-	mIndexAttribute->setBuffer(mIndexBuffer);
-	mIndexAttribute->setCount(numIndicies);
 
 	qDebug() << "ASDF!";
 }

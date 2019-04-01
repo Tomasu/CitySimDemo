@@ -19,6 +19,7 @@
 #include <Qt3DExtras/QFirstPersonCameraController>
 #include "MainWindow.h"
 #include "ShpMeshGeometry.h"
+#include "ShpEntity.h"
 #include <shapefil.h>
 #include <Qt3DExtras/QPerVertexColorMaterial>
 #include <QtCore/QFileInfo>
@@ -54,7 +55,7 @@ MainWindow::MainWindow(const QString &path)
 
 	mInputSettings = new QInputSettings;
 
-	mForwardRenderer->setClearColor(QColor(QRgb(0xadadadad)));
+	mForwardRenderer->setClearColor(QColor(QRgb(0xffffff)));
 
 	setSurfaceType(QSurface::OpenGLSurface);
 
@@ -62,13 +63,14 @@ MainWindow::MainWindow(const QString &path)
 
 	QSurfaceFormat format = QSurfaceFormat::defaultFormat();
 	if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL) {
-		format.setVersion(4, 3);
+		format.setVersion(4, 5);
 		format.setProfile(QSurfaceFormat::CoreProfile);
 	}
 
 	format.setDepthBufferSize(24);
 	format.setSamples(4);
 	format.setStencilBufferSize(8);
+
 	setFormat(format);
 	QSurfaceFormat::setDefaultFormat(format);
 
@@ -76,14 +78,15 @@ MainWindow::MainWindow(const QString &path)
 	mAspectEngine->registerAspect(mInputAspect);
 	mAspectEngine->registerAspect(mLogicAspect);
 
+//	QLineWidth *lineWidth = new QLineWidth(mRenderSettings);
+//	lineWidth->setValue(15.0f);
+
 	mCamera->setParent(mRootEntity);
 	mForwardRenderer->setCamera(mCamera);
 	mForwardRenderer->setSurface(this);
 	mRenderSettings->setActiveFrameGraph(mForwardRenderer);
-	mInputSettings->setEventSource(this);
 
-	QLineWidth *lineWidth = new QLineWidth(mRenderSettings);
-	lineWidth->setValue(5.0f);
+	mInputSettings->setEventSource(this);
 
 	mRootEntity = createScene(path);
 }
@@ -102,6 +105,8 @@ MainWindow::~MainWindow()
 }
 
 void recurseDirLoad(const QFileInfo info, QEntity *rootEntity);
+
+QString shpPath(const QFileInfo &fi);
 
 QEntity *MainWindow::createScene(const QString &path)
 {
@@ -145,14 +150,67 @@ QEntity *MainWindow::createScene(const QString &path)
 		{
 			qDebug() << "got dir: " << path;
 
-			recurseDirLoad(fileInfo, mRootEntity);
+			QDir dir(path);
 
-			//Qt3DCore::QEntity *entity = loadShp(path);
-			//entity->setParent(mRootEntity);
+			SHPEntity *roadEntity = new SHPEntity;
+			if(!roadEntity->load(shpPath(QFileInfo(dir, "roads"))))
+			{
+				qDebug() << " failed to load roads";
+			}
+
+			roadEntity->getTransform()->setScale(0.05f);
+
+			QVector3D roadOrigin = roadEntity->origin() * 0.05f;
+
+			roadEntity->setParent(mRootEntity);
+
+			SHPEntity *rooflineEntity = new SHPEntity;
+			if(!rooflineEntity->load(shpPath(QFileInfo(dir, "rooflines"))))
+			{
+				qDebug() << " failed to load rooflines";
+			}
+
+			QVector3D rooflineOrigin = rooflineEntity->origin() * 0.05f;
+			QVector3D diffOrigin = rooflineOrigin - roadOrigin;
+
+			qDebug() << " roofline orig: " << rooflineOrigin << " road orig: " << roadOrigin;
+			qDebug() << " diff orig: " << diffOrigin;
+
+			Qt3DCore::QTransform *rooflineTransform = rooflineEntity->getTransform();
+			rooflineTransform->setTranslation(diffOrigin);
+			rooflineTransform->setScale(0.05f);
+
+			rooflineEntity->setParent(mRootEntity);
 		}
 	}
 
 	return mRootEntity;
+}
+
+QString shpPath(const QFileInfo &fi)
+{
+	if(!fi.isDir())
+	{
+		qDebug() << " not a dir!";
+		return "";
+	}
+
+	QDir dir(fi.filePath());
+
+	QFileInfoList fileInfoList = dir.entryInfoList(
+			QDir::Files | QDir::NoDotAndDotDot | QDir::Readable);
+
+	for (QFileInfo entInfo: fileInfoList)
+	{
+		if (entInfo.suffix() == "shp" || entInfo.suffix() == "shx")
+		{
+			QFileInfo fileInfo(entInfo.dir(), entInfo.baseName());
+			qDebug() << " found: " << fileInfo.filePath();
+			return fileInfo.filePath();
+		}
+	}
+
+	return "";
 }
 
 void dirLoad(const QString &dirName, QEntity *rootEntity)
@@ -213,14 +271,12 @@ QCamera *MainWindow::createCamera()
 	cameraEntity->setUpVector(QVector3D(0, 1, 0));
 	cameraEntity->setViewCenter(QVector3D(0, 0, 0));
 
-
 	return cameraEntity;
 }
 
 QAbstractCameraController *MainWindow::createCameraController(QEntity *rootEntity, QCamera *camera)
 {
 //	QOrbitCameraController *camController = new QOrbitCameraController(rootEntity);
-
 
 	auto *camController = new QFirstPersonCameraController(rootEntity);
 	camController->setLinearSpeed(90.0f);
@@ -273,7 +329,7 @@ Qt3DCore::QEntity *MainWindow::rootEntity()
 }
 
 
-Qt3DCore::QEntity *loadShp(const QString &path, const float rot = 0.0f)
+Qt3DCore::QEntity *loadShp(const QString &path)
 {
 	qDebug() << "loadShp: " << path;
 
@@ -281,8 +337,8 @@ Qt3DCore::QEntity *loadShp(const QString &path, const float rot = 0.0f)
 	customMeshEntity->setObjectName("customMeshEntity");
 
 	Qt3DCore::QTransform *transform = new Qt3DCore::QTransform;
-	transform->setScale(0.01f); // ??
-	transform->setRotationY(rot);
+	//transform->setScale(0.01f); // ??
+	//transform->setRotationY(rot);
 	transform->setTranslation(QVector3D(0, 0, 0.0f));
 
 	QMaterial *material = new QPerVertexColorMaterial(customMeshEntity);
@@ -308,6 +364,7 @@ Qt3DCore::QEntity *loadShp(const QString &path, const float rot = 0.0f)
 
 	customMeshEntity->setEnabled(true);
 
+	//customMeshEntity->
 	return customMeshEntity;
 }
 

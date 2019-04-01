@@ -14,11 +14,13 @@ set(CMAKE_PREFIX_PATH "/home/moose/build/Qt/5.12.2/gcc_64/lib/cmake;${CMAKE_PREF
 # Find the QtWidgets library
 find_package(Qt5 CONFIG REQUIRED Core Gui Widgets 3DCore 3DExtras 3DRender 3DInput)
 
+find_package(GDAL REQUIRED)
+
 set(citysim_SRC
 	 src/main.cpp
-	 src/MainWindow.cpp src/MainWindow.h src/ShpMeshGeometry.cpp src/ShpMeshGeometry.h src/LocUtil.h src/GeometryBuilder.cpp src/GeometryBuilder.h)
+	 src/MainWindow.cpp src/MainWindow.h src/ShpMeshGeometry.cpp src/ShpMeshGeometry.h src/LocUtil.h src/GeometryBuilder.cpp src/GeometryBuilder.h src/Constants.h src/BufferBuilder.cpp src/BufferBuilder.h src/ShpMeshRenderer.cpp src/ShpMeshRenderer.h src/ShpEntity.cpp src/ShpEntity.h)
 
-add_definitions(-fPIC -std=c++11)
+add_definitions(-fPIC -std=c++11 -Wall -Wextra)
 
 list(APPEND INCLIST ${Qt5Core_INCLUDE_DIRS})
 list(APPEND INCLIST ${Qt5Widgets_INCLUDE_DIRS})
@@ -27,6 +29,7 @@ list(APPEND INCLIST ${Qt53DCore_INCLUDE_DIRS})
 list(APPEND INCLIST ${Qt53DExtras_INCLUDE_DIRS})
 list(APPEND INCLIST ${Qt53DRender_INCLUDE_DIRS})
 list(APPEND INCLIST ${Qt53DInput_INCLUDE_DIRS})
+list(APPEND INCLIST ${GDAL_INCLUDE_DIRS})
 
 #list(JOIN INCLIST " " INCLISTVAL)
 #message(STATUS INCLIST ${INCLISTVAL})
@@ -37,7 +40,7 @@ include_directories(${INCLIST})
 add_executable(citysim ${citysim_SRC})
 
 # Use the Widgets module from Qt 5.
-target_link_libraries(citysim Qt5::Core Qt5::Widgets Qt5::3DExtras shp)
+target_link_libraries(citysim Qt5::Core Qt5::Widgets Qt5::3DExtras shp ${GDAL_LIBRARY})
 
 # Install the executable
 install(TARGETS citysim DESTINATION bin)

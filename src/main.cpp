@@ -23,10 +23,13 @@
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QPhongMaterial>
 
-Qt3DCore::QEntity *loadShp(const char *Qt3DCorepath);
+#include <ogrsf_frmts.h>
+
 int main(int argc, char *argv[])
 {
 	char *path = argc > 0 ? argv[1] : nullptr;
+
+	GDALAllRegister();
 
 	QGuiApplication app(argc, argv);
 	MainWindow w(path);
