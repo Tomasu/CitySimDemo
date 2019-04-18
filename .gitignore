@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# Hidden and Temp files
+.*
+*~
+
+# Build dirs
+build/
+cmake-build-debug
+
