@@ -3,11 +3,25 @@
 //
 
 #include "GeometryBuilder.h"
+#include "LogUtils.h"
 #include <QDebug>
 #include <iostream>
 #include <iomanip>
 #include <QColor>
 #include <QPainter>
+
+#define TAG "GeometryBuilder"
+
+GeometryBuilder::GeometryBuilder(const QRectF &bounds)
+{
+	mNumVerticies = 0;
+	mNumIndicies = 0;
+
+	mOrigX = bounds.x();
+	mOrigY = bounds.y();
+
+	mMinX = mMaxX = mMinY = mMaxY = 0.0f;
+}
 
 GeometryBuilder::GeometryBuilder(double origX, double origY, int width, int height)
 {
@@ -114,7 +128,7 @@ void GeometryBuilder::addPolygon(const OGRPolygon *polygon, const QVector4D &col
 	const OGRLinearRing *ext_ring = polygon->getExteriorRing();
 	if (ext_ring == nullptr)
 	{
-		qDebug() << "ERROR: polygon with no ext ring?";
+		log_error("polygon with no ext ring?");
 		return;
 	}
 
@@ -139,12 +153,12 @@ uint32_t GeometryBuilder::getNumIndicies()
 	return mNumIndicies;
 }
 
-QByteArray &GeometryBuilder::getVerticies()
+const QByteArray &GeometryBuilder::getVerticies()
 {
 	return mVertexBuilder.byteArray();
 }
 
-QByteArray &GeometryBuilder::getIndicies()
+const QByteArray &GeometryBuilder::getIndicies()
 {
 	return mIndexBuilder.byteArray();
 }
@@ -196,3 +210,76 @@ void GeometryBuilder::addPoint(const OGRPoint &point, const QVector4D &color)
 
 	mNumVerticies++;
 }
+
+void GeometryBuilder::addLineString(const QVector<QPointF> &lineString)
+{
+	addLineString(lineString, QVector4D(0.0, 0.5, 0.5, 0.8));
+}
+
+void GeometryBuilder::addLineString(const QVector<QPointF> &lineString, const QVector4D &color)
+{
+	for (int i = 0; i < lineString.size(); ++i)
+	{
+		addPoint(lineString.at(i), color);
+	}
+}
+
+void GeometryBuilder::addPolygon(const QVector<QPointF> &polygon)
+{
+
+}
+
+void GeometryBuilder::addPolygon(const QVector<QPointF> &polygon, const QVector4D &color)
+{
+
+}
+
+void GeometryBuilder::addPoint(const QPointF &point, const QVector4D &color)
+{
+	double x = point.x() - mOrigX;
+	double y = point.x() - mOrigY;
+
+	if (x < mMinX)
+	{
+		mMinX = x;
+	}
+
+	if (x > mMaxX)
+	{
+		mMaxX = x;
+	}
+
+	if (y < mMinY)
+	{
+		mMinY = y;
+	}
+
+	if (y > mMaxY)
+	{
+		mMaxY = y;
+	}
+
+//		if (x < 0 || y < 0 || x > 40000 || y > 40000)
+//		{
+//			std::cout << std::setprecision(10) << " pt: " << x << ", " << y <<  " orig: " << pt.getX() << ", " << pt.getY() << std::endl;
+//		}
+
+	//std::cout << std::setprecision(10) << " pt: " << x << ", " << y << std::endl;
+
+	mVertexBuilder.add(x);
+	mVertexBuilder.add(y);
+	mVertexBuilder.add(0.0f);
+
+	mVertexBuilder.add(color.x());
+	mVertexBuilder.add(color.y());
+	mVertexBuilder.add(color.z());
+	mVertexBuilder.add(color.w());
+
+	//mIndexBuilder.add(mNumVerticies);
+
+	//mNumIndicies++;
+
+	mNumVerticies++;
+}
+
+

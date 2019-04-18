@@ -16,6 +16,11 @@
 #include <Qt3DInput/QInputSettings>
 #include <QtGui/QWindow>
 #include <Qt3DExtras/QAbstractCameraController>
+#include <src/graph/TransportGraph.h>
+#include <gdal_priv.h>
+#include <src/quadtree/QuadTreeNode.h>
+#include <src/aspect/FpsMonitorAspect.h>
+#include "RoadData.h"
 
 class MainWindow : public QWindow
 {
@@ -27,12 +32,16 @@ class MainWindow : public QWindow
 
 	private:
 
+		TransportGraph *mGraph;
+		QuadTreeNode *mRoadsQuadTree;
+
 		Qt3DCore::QAspectEngine *mAspectEngine;
 
 		// Aspects
 		Qt3DRender::QRenderAspect *mRenderAspect;
 		Qt3DInput::QInputAspect *mInputAspect;
 		Qt3DLogic::QLogicAspect *mLogicAspect;
+		FpsMonitorAspect *mFpsAspect;
 
 		// Renderer
 		Qt3DRender::QRenderSettings *mRenderSettings;
@@ -68,6 +77,8 @@ class MainWindow : public QWindow
 
 		bool
 		event(QEvent *event) override;
+
+		void buildRoadGraph(GDALDataset *dataset);
 };
 
 

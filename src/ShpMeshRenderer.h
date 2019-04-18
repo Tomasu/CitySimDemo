@@ -5,7 +5,7 @@
 #ifndef CITYSIM_SHPMESHRENDERER_H
 #define CITYSIM_SHPMESHRENDERER_H
 
-
+#include <ogrsf_frmts.h>
 #include <Qt3DRender/QGeometryRenderer>
 #include <Qt3DRender/QMaterial>
 #include <Qt3DCore/QTransform>
@@ -17,7 +17,7 @@ class SHPMeshRenderer : public Qt3DRender::QGeometryRenderer
 		SHPMeshRenderer(Qt3DCore::QNode *parent = nullptr);
 		~SHPMeshRenderer();
 
-		bool load(const QString &path);
+		bool load(GDALDataset *dataset);
 
 		SHPMeshGeometry *shpGeometry() { return mGeometry; }
 

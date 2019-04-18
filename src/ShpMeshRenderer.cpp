@@ -7,6 +7,8 @@
 
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QMaterial>
+#include <ogrsf_frmts.h>
+
 using namespace Qt3DCore;
 using namespace Qt3DRender;
 
@@ -21,9 +23,9 @@ SHPMeshRenderer::~SHPMeshRenderer()
 
 }
 
-bool SHPMeshRenderer::load(const QString &path)
+bool SHPMeshRenderer::load(GDALDataset *dataset)
 {
-	mGeometry = new SHPMeshGeometry(path, this);
+	mGeometry = new SHPMeshGeometry(dataset, this);
 
 	//setInstanceCount(20);
 	//setIndexOffset(0);

@@ -5,19 +5,20 @@
 #ifndef CITYSIM_SHPENTITY_H
 #define CITYSIM_SHPENTITY_H
 
-
+#include <gdal_frmts.h>
 #include <Qt3DCore/QEntity>
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QGeometryRenderer>
+#include <Qt3DRender/QObjectPicker>
 #include "ShpMeshRenderer.h"
 
 class SHPEntity : public Qt3DCore::QEntity
 {
 	public:
 		explicit SHPEntity(QNode *parent = nullptr);
-		~SHPEntity() override;
+		virtual ~SHPEntity() override;
 
-		bool load(const QString &path);
+		virtual bool load(GDALDataset *dataset);
 		Qt3DCore::QTransform *getTransform() { return mTransform; }
 		Qt3DRender::QMaterial *getMaterial() { return mMaterial; }
 
@@ -30,6 +31,7 @@ class SHPEntity : public Qt3DCore::QEntity
 		Qt3DCore::QTransform *mTransform;
 		Qt3DRender::QMaterial *mMaterial;
 		SHPMeshRenderer *mShpRenderer;
+		Qt3DRender::QObjectPicker *mPicker;
 };
 
 

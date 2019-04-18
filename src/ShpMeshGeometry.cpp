@@ -15,6 +15,7 @@
 #include <QtGui/QPainter>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDir>
+#include <set>
 #include "ShpMeshGeometry.h"
 #include "LocUtil.h"
 #include "GeometryBuilder.h"
@@ -23,7 +24,7 @@
 using namespace Qt3DRender;
 using namespace Qt3DCore;
 
-SHPMeshGeometry::SHPMeshGeometry(const QString &path, QNode *parent) : QGeometry(parent)
+SHPMeshGeometry::SHPMeshGeometry(GDALDataset *dataset, QNode *parent) : QGeometry(parent)
 {
 	mNumVerticies = 0;
 	mVertexBuffer = new QBuffer(Qt3DRender::QBuffer::VertexBuffer, this);
@@ -61,7 +62,7 @@ SHPMeshGeometry::SHPMeshGeometry(const QString &path, QNode *parent) : QGeometry
 //	mIndexAttribute->setByteStride(0);
 	//mIndexAttribute->setCount(indexDataIdx);
 
-	loadMesh(path);
+	loadMesh(dataset);
 
 	addAttribute(mPosAttribute);
 	addAttribute(mColorAttribute);
@@ -182,19 +183,8 @@ void reportGeometry(const QString &prefix, OGRGeometry *geom)
 	exit(1);
 }
 
-void SHPMeshGeometry::loadMesh(const QString &path)
+void SHPMeshGeometry::loadMesh(GDALDataset *dataset)
 {
-	QString shpPath = path + ".shp";
-	GDALDataset *dataset =
-			static_cast<GDALDataset *>(GDALOpenEx(shpPath.toLatin1().data(),
-					GDAL_OF_READONLY | GDAL_OF_VECTOR | GDAL_OF_VERBOSE_ERROR, NULL, NULL, NULL));
-
-	if (dataset == nullptr)
-	{
-		qDebug() << "error opening with gdal?!";
-		return;
-	}
-
 	int numLayers = dataset->GetLayerCount();
 
 	OGRSpatialReference sourceSrs(dataset->GetProjectionRef());
@@ -388,8 +378,47 @@ void SHPMeshGeometry::loadMesh(const QString &path)
 		OGRFeature *poFeature = nullptr;
 		int countedFeatures = 0;
 
+		/*
+  addr_rg_l: String (254.0)
+  addr_rg_r: String (254.0)
+  class_cd: String (254.0)
+  class_de: String (254.0)
+  digitiz_cd: String (254.0)
+  digitz_de: String (254.0)
+  id: Real (33.31)
+  name: String (254.0)
+  name_ab: String (254.0)
+  name_ab_pr: String (254.0)
+  name_pr: String (254.0)
+  resp_cd: String (254.0)
+  resp_de: String (254.0)
+  type_cd: String (254.0)
+  type_de: String (254.0)
+
+
+		 */
+//		int classcd_id = layerDefn->GetFieldIndex("class_cd");
+//		int classde_id = layerDefn->GetFieldIndex("class_de");
+//		int digitiz_id = layerDefn->GetFieldIndex("digitiz_cd");
+//		int digitzde_id = layerDefn->GetFieldIndex("digitz_de");
+//
+//		std::set<std::string> uniqueClassCD;
+//		std::set<std::string> uniqueClassDE;
+//		std::set<std::string> uniqueDigitiz;
+//		std::set<std::string> uniqueDigitzDE;
+
 		while ((poFeature = layer->GetNextFeature()))
 		{
+//			const char *class_cd = poFeature->GetFieldAsString(classcd_id);
+//			const char *class_de = poFeature->GetFieldAsString(classde_id);
+//			const char *digitiz = poFeature->GetFieldAsString(digitiz_id);
+//			const char *digitz_de = poFeature->GetFieldAsString(digitzde_id);
+//
+//			uniqueClassCD.insert(class_cd);
+//			uniqueClassDE.insert(class_de);
+//			uniqueDigitiz.insert(digitiz);
+//			uniqueDigitzDE.insert(digitz_de);
+
 			if (poFeature->GetGeomFieldCount() != 1)
 			{
 				qDebug() << " feature geom field cnt: " << poFeature->GetGeomFieldCount();
@@ -518,17 +547,17 @@ void SHPMeshGeometry::loadMesh(const QString &path)
 
 		qDebug() << " expected indexes: " << (expectedIndexes) << " builder indexes: " << geometryBuilder.getNumIndicies();
 
-		QString layerFileName = QString(layer->GetName()) + ".png";
-		QFileInfo fileInfo = QFileInfo(path);
-		fileInfo.setFile(layerFileName);
+//		QString layerFileName = QString(layer->GetName()) + ".png";
+//		QFileInfo fileInfo = QFileInfo(path);
+//		fileInfo.setFile(layerFileName);
 
 		//QPixmap *pixmap = geometryBuilder.getPixmap();
 		//qDebug() << " saving (" << pixmap->width() << "," << pixmap->height() << ") pixmap to: " << fileInfo;
 		//pixmap->save(fileInfo.filePath());
 
-		fileInfo.refresh();
+//		fileInfo.refresh();
 
-		qDebug() << " saved pixmap to: " << fileInfo;
+//		qDebug() << " saved pixmap to: " << fileInfo;
 
 		mVertexBuffer->setData(geometryBuilder.getVerticies());
 		mIndexBuffer->setData(geometryBuilder.getIndicies());
@@ -543,6 +572,30 @@ void SHPMeshGeometry::loadMesh(const QString &path)
 
 		//mIndexAttribute->setBuffer(mIndexBuffer);
 		//mIndexAttribute->setCount(geometryBuilder.getNumIndicies());
+
+//		qDebug() << " unique class_cd values: ";
+//		for (auto &it: uniqueClassCD)
+//		{
+//			std::cout << "   " << it << std::endl;
+//		}
+//
+//		qDebug() << " unique class_de values: ";
+//		for (auto &it: uniqueClassDE)
+//		{
+//			std::cout << "   " << it << std::endl;
+//		}
+//
+//		qDebug() << " unique digitz values: ";
+//		for (auto &it: uniqueDigitiz)
+//		{
+//			std::cout << "   " << it << std::endl;
+//		}
+//
+//		qDebug() << " unique digitzDE values: ";
+//		for (auto &it: uniqueDigitzDE)
+//		{
+//			std::cout << "   " << it << std::endl;
+//		}
 
 		qDebug() << "done with layer.";
 	}

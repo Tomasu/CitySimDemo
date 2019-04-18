@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "ShpMeshGeometry.h"
+#include "LogUtils.h"
 #include <QApplication>
 #include <Qt3DExtras/QForwardRenderer>
 
@@ -28,6 +29,7 @@
 int main(int argc, char *argv[])
 {
 	char *path = argc > 0 ? argv[1] : nullptr;
+
 
 	GDALAllRegister();
 

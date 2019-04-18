@@ -6,6 +6,7 @@
 #define CITYSIM_BUFFERBUILDER_H
 
 #include <QtCore/QByteArray>
+#include "Constants.h"
 
 template<typename T>
 class BufferBuilder
@@ -20,7 +21,7 @@ class BufferBuilder
 		void add(const T &item);
 
 		T *data();
-		QByteArray &byteArray();
+		const QByteArray &byteArray();
 
 	private:
 		uint32_t mCurIdx;
@@ -54,10 +55,12 @@ T *BufferBuilder<T>::data()
 }
 
 template< typename T >
-QByteArray &BufferBuilder<T>::byteArray()
+const QByteArray &BufferBuilder<T>::byteArray()
 {
 	return mByteArray;
 }
 
+using VertexBufferBuilder = BufferBuilder<VTX_TYPE>;
+using IndexBufferBuilder = BufferBuilder<IDX_TYPE>;
 
 #endif //CITYSIM_BUFFERBUILDER_H

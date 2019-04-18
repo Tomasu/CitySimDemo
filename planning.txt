@@ -1,0 +1,63 @@
+Planning / Random Stuff
+=======================
+
+
+
+Figuring out how to:
+    - represent streets/intersections...
+    - represent "sims" (cars, people, bikes, whatever)
+    - how sims/entities are "connected" to a given graph node/edge
+
+
+We have options:
+    - GOD graph that contains all data necessary to render
+        - including nodes/edges that hold the sims that are on it...
+
+    - simpler graph that just describes the road network that can be
+      referenced by other data structures.
+        - currently preferring this method. ^^^
+
+
+
+Edmonton road shapefile specifies the following:
+
+ unique class_cd values:
+   A-A
+   A-B
+   A-C
+   A-D
+   AL-R
+   C-C
+   C-I
+   C-R
+   L-C
+   L-I
+   L-P
+   L-PW
+   L-R
+ unique class_de values:
+   Alley-Residential
+   Arterial-Class A (Primary Highway, Truck Route)
+   Arterial-Class B (Non-Primary Highway, Truck Route)
+   Arterial-Class C (Truck Route, Low speeds)
+   Arterial-Class D (Non-Truck Route, Low speeds)
+   Collector-Commercial (Adjoining lots zoned > 50% Commercial)
+   Collector-Industrial (Adjoining lots zoned > 50% Industrial)
+   Collector-Residential
+   Local-Commercial (Adjoining lots zoned > 50% Commercial)
+   Local-Industrial (Adjoining lots zoned > 50% Industrial)
+   Local-ParkWay
+   Local-Private
+   Local-Residential
+ unique digitz values:
+   1F
+   1R
+   2B
+   2F
+   2R
+ unique digitzDE values:
+   1-way Road Segment (Drawn in Travel Direction)
+   1-way Road Segment (Drawn opposite Travel Direction)
+   2-way Road Segment (Default)
+   True 1-way Road Segment (Drawn in Travel Direction)
+   True 1-way Road Segment (Drawn opposite Travel Direction)

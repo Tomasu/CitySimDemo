@@ -20,8 +20,16 @@
 class GeometryBuilder
 {
 	public:
+		explicit GeometryBuilder(const QRectF &bounds);
 		GeometryBuilder(double origX, double origY, int width, int height);
 		~GeometryBuilder();
+
+		void addLineString(const QVector<QPointF> &lineString);
+		void addPolygon(const QVector<QPointF> &polygon);
+
+		void addLineString(const QVector<QPointF> &lineString, const QVector4D &color);
+		void addPolygon(const QVector<QPointF> &polygon, const QVector4D &color);
+
 
 		void addLineString(const OGRLineString *lineString);
 		void addPolygon(const OGRPolygon *polygon);
@@ -32,8 +40,8 @@ class GeometryBuilder
 		uint32_t getNumVerticies();
 		uint32_t getNumIndicies();
 
-		QByteArray &getVerticies();
-		QByteArray &getIndicies();
+		const QByteArray &getVerticies();
+		const QByteArray &getIndicies();
 
 		QVector3D getMinPos() { return QVector3D(mMinX, mMinY, 0.0f); }
 		QVector3D getMaxPos() { return QVector3D(mMaxX, mMaxY, 0.0f); }
@@ -59,6 +67,8 @@ class GeometryBuilder
 
 		QPixmap *mPixmap;
 		QPainter *mPainter;
+
+		void addPoint(const QPointF &point, const QVector4D &color);
 };
 
 

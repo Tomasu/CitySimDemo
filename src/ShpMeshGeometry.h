@@ -5,13 +5,15 @@
 #ifndef CITYSIM_SHPMESHGEOMETRY_H
 #define CITYSIM_SHPMESHGEOMETRY_H
 
+#include <gdal_priv.h>
+#include <gdal.h>
 #include <Qt3DRender/QGeometry>
 #include <Qt3DRender/QAttribute>
 
 class SHPMeshGeometry : public Qt3DRender::QGeometry
 {
 	public:
-		SHPMeshGeometry(const QString &path, Qt3DCore::QNode *parent);
+		SHPMeshGeometry(GDALDataset *dataset, Qt3DCore::QNode *parent);
 		~SHPMeshGeometry();
 
 		int getNumVerticies() { return mNumVerticies; }
@@ -30,7 +32,7 @@ class SHPMeshGeometry : public Qt3DRender::QGeometry
 		double mOriginX;
 		double mOriginY;
 
-		void loadMesh(const QString &qString);
+		void loadMesh(GDALDataset *dataset);
 };
 
 
