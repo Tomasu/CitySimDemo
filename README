@@ -1,11 +1,15 @@
-CMake Qt5 GUI Template
-----------------------
+CitySim
+-------
 
 You need Qt5 and CMake 2.8.11 or higher
 
+-- this repo uses git-lfs
+
+You may need to install git-lfs and 
+
 -- Build instructions --
 
-cd /your/project/build
+cd /path/to/citysim/build
 cmake ../
 make
 
