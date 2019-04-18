@@ -1,2 +1,14 @@
 data/edmonton filter=lfs diff=lfs merge=lfs -text
+data/edmonton/ filter=lfs diff=lfs merge=lfs -text
+data/edmonton/roads filter=lfs diff=lfs merge=lfs -text
+data/edmonton/rooflines filter=lfs diff=lfs merge=lfs -text
+data/edmonton/rooflines/170033[[:space:]]Building[[:space:]]Footprint_3TM.dbf filter=lfs diff=lfs merge=lfs -text
+data/edmonton/rooflines/170033[[:space:]]Building[[:space:]]Footprint_3TM.prj filter=lfs diff=lfs merge=lfs -text
+data/edmonton/rooflines/170033[[:space:]]Building[[:space:]]Footprint_3TM.shp filter=lfs diff=lfs merge=lfs -text
+data/edmonton/rooflines/170033[[:space:]]Building[[:space:]]Footprint_3TM.shx filter=lfs diff=lfs merge=lfs -text
+data/edmonton/roads/geo_export_9838bedc-89ec-4df7-91d5-8b9936f52949.dbf filter=lfs diff=lfs merge=lfs -text
+data/edmonton/roads/geo_export_9838bedc-89ec-4df7-91d5-8b9936f52949.prj filter=lfs diff=lfs merge=lfs -text
+data/edmonton/roads/geo_export_9838bedc-89ec-4df7-91d5-8b9936f52949.shp filter=lfs diff=lfs merge=lfs -text
+data/edmonton/roads/geo_export_9838bedc-89ec-4df7-91d5-8b9936f52949.shx filter=lfs diff=lfs merge=lfs -text
+data filter=lfs diff=lfs merge=lfs -text
 edmonton-slsn/* filter=lfs diff=lfs merge=lfs -text
