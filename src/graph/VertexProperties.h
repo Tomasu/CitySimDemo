@@ -7,12 +7,15 @@
 
 #include <cstdint>
 
+#include <QVector3D>
+
 typedef uint32_t VertexId;
 
 class VertexProperties
 {
 	public:
-		VertexProperties(VertexId id, double x, double y) : mId(id), mX(x), mY(y) { }
+		VertexProperties(VertexId id, float x, float y, float z) : mId(id), mX(x), mY(y), mZ(z) { }
+		VertexProperties(VertexId id, const QVector3D &vec) : mId(id), mX(vec.x()), mY(vec.y()), mZ(vec.z()) { }
 
 		VertexId
 		getId() const
@@ -26,33 +29,45 @@ class VertexProperties
 			mId = id;
 		}
 
-		double
+		float
 		getX() const
 		{
 			return mX;
 		}
 
 		void
-		setX(double x)
+		setX(float x)
 		{
 			mX = x;
 		}
 
-		double
+		float
 		getY() const
 		{
 			return mY;
 		}
 
 		void
-		setY(double y)
+		setY(float y)
 		{
 			mY = y;
 		}
 
+		float
+		getZ() const
+		{
+			return mZ;
+		}
+
+		void
+		setZ(float z)
+		{
+			mZ = z;
+		}
+
 	private:
 		VertexId mId;
-		double mX, mY;
+		float mX, mY, mZ;
 };
 
 #include <boost/graph/adjacency_list.hpp>

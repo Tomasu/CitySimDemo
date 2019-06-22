@@ -5,7 +5,7 @@ You need Qt5 and CMake 2.8.11 or higher
 
 -- this repo uses git-lfs
 
-You may need to install git-lfs and 
+You may need to install git-lfs.
 
 -- Build instructions --
 

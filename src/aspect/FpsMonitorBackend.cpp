@@ -9,7 +9,8 @@
 
 
 FpsMonitorBackend::FpsMonitorBackend()
-		: Qt3DCore::QBackendNode(Qt3DCore::QBackendNode::ReadWrite)
+		: Qt3DCore::QBackendNode(Qt3DCore::QBackendNode::ReadWrite),
+		m_rollingMeanFrameCount{0}
 {
 }
 

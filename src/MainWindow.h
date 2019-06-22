@@ -1,26 +1,52 @@
+#ifndef CITYSIM_MAINWINDOW_H
+#define CITYSIM_MAINWINDOW_H
+
 //
 // Created by moose on 27/03/19.
 //
 
-#ifndef CITYSIM_MAINWINDOW_H
-#define CITYSIM_MAINWINDOW_H
 
-
-#include <Qt3DCore/QAspectEngine>
-#include <Qt3DRender/QRenderAspect>
-#include <Qt3DInput/QInputAspect>
-#include <Qt3DLogic/QLogicAspect>
-#include <Qt3DRender/QRenderSettings>
-#include <Qt3DExtras/QForwardRenderer>
-#include <Qt3DRender/QCamera>
-#include <Qt3DInput/QInputSettings>
 #include <QtGui/QWindow>
-#include <Qt3DExtras/QAbstractCameraController>
-#include <src/graph/TransportGraph.h>
+#include <QPoint>
+
 #include <gdal_priv.h>
-#include <src/quadtree/QuadTreeNode.h>
-#include <src/aspect/FpsMonitorAspect.h>
-#include "RoadData.h"
+
+class FpsMonitorAspect;
+class QuadTree;
+class TransportGraph;
+class QuadTreeNodeMapper;
+class QuadTreeNodeEntityFactory;
+
+namespace Qt3DInput {
+	class QMouseDevice;
+	class QMouseHandler;
+	class QMouseEvent;
+	class QInputAspect;
+	class QInputSettings;
+}
+
+namespace Qt3DCore {
+	class QEntity;
+	class QAspectEngine;
+	class QTransform;
+}
+
+namespace Qt3DRender {
+	class QCamera;
+	class QRenderSettings;
+	class QRenderAspect;
+	class QScreenRayCaster;
+}
+
+namespace Qt3DExtras {
+	class QForwardRenderer;
+	class QAbstractCameraController;
+}
+
+namespace Qt3DLogic {
+	class QLogicAspect;
+	class QFrameAction;
+}
 
 class MainWindow : public QWindow
 {
@@ -29,11 +55,16 @@ class MainWindow : public QWindow
 		~MainWindow();
 
 		Qt3DCore::QEntity *rootEntity();
+		Qt3DCore::QEntity *mapEntity();
+
+		Qt3DRender::QCamera *camera() const { return mCamera; }
+
+		Qt3DInput::QMouseHandler *mouseHandler() const { return mMouseHandler; }
 
 	private:
 
 		TransportGraph *mGraph;
-		QuadTreeNode *mRoadsQuadTree;
+		QuadTree *mRoadsQuadTree;
 
 		Qt3DCore::QAspectEngine *mAspectEngine;
 
@@ -48,25 +79,41 @@ class MainWindow : public QWindow
 		Qt3DExtras::QForwardRenderer *mForwardRenderer;
 		Qt3DRender::QCamera *mCamera;
 		Qt3DExtras::QAbstractCameraController *mCamController;
+		Qt3DRender::QScreenRayCaster *mRayCaster;
 
 		// Input
 		Qt3DInput::QInputSettings *mInputSettings;
 
+		Qt3DInput::QMouseDevice *mMouseDevice;
+		Qt3DInput::QMouseHandler *mMouseHandler;
+
 		// Logic
+		Qt3DLogic::QFrameAction *mFrameAction;
 
 		// Scene
 		Qt3DCore::QEntity *mRootEntity;
+		Qt3DCore::QTransform *mRootTransform;
+
+		Qt3DCore::QEntity *mMapEntity;
+		Qt3DCore::QTransform *mMapTransform;
 
 		// other
 
+
 		bool mInitialized;
 
-		Qt3DCore::QEntity *createScene(const QString &path);
+		void createScene(Qt3DCore::QEntity *rootEntity, const QString &path);
 
-		Qt3DRender::QCamera *createCamera();
+		Qt3DRender::QCamera *createCamera(Qt3DCore::QEntity *rootEntity);
 		Qt3DExtras::QAbstractCameraController *createCameraController(Qt3DCore::QEntity *rootEntity, Qt3DRender::QCamera *camera);
 
 		Qt3DCore::QEntity *createRootEntity();
+
+		QuadTreeNodeMapper *mNodeMapper;
+		QuadTreeNodeEntityFactory *mEntityFactory;
+
+		QPoint mMousePos;
+		bool mMouseMoved;
 
 	protected:
 		void
@@ -78,7 +125,10 @@ class MainWindow : public QWindow
 		bool
 		event(QEvent *event) override;
 
-		void buildRoadGraph(GDALDataset *dataset);
+		void buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *dataset);
+
+		void mousePositionChanged(Qt3DInput::QMouseEvent *ev);
+		void frameActionTriggered(float dt);
 };
 
 

@@ -8,8 +8,9 @@
 #include "FpsMonitorBackend.h"
 
 UpdateFpsMonitorsJob::UpdateFpsMonitorsJob(FpsMonitorAspect *aspect)
-		: Qt3DCore::QAspectJob()
-		, m_aspect(aspect)
+		: Qt3DCore::QAspectJob(),
+		m_aspect(aspect),
+		m_dt{0}
 {
 	Q_ASSERT(aspect);
 }

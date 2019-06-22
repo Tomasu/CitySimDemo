@@ -332,7 +332,7 @@ void SHPMeshGeometry::loadMesh(GDALDataset *dataset)
 		double width = extentX[1] - extentX[0];
 		double height = extentY[1] - extentY[0];
 
-		GeometryBuilder geometryBuilder(extentX[0], extentY[0], width, height);
+		GeometryBuilder geometryBuilder(extentX[0], extentY[0], extentZ[0], width, height);
 
 		mOriginX = extentX[0];
 		mOriginY = extentY[0];
@@ -469,13 +469,13 @@ void SHPMeshGeometry::loadMesh(GDALDataset *dataset)
 
 			numPoints += countPoints(geometry);
 
-			QVector4D color(0.0f, 0.0f, 0.0f, 1.0f);
+			QColor color(0.0f, 0.0f, 0.0f, 1.0f);
 
 			if (poFeature->GetFID() == 32675) {
 				qDebug("got magic thing:");
 				poFeature->DumpReadable(nullptr, nullptr);
 				geometry->dumpReadable(nullptr, nullptr);
-				color = QVector4D(1.0f, 0.0f, 0.0f, 1.0f);
+				color = QColor(1.0f, 0.0f, 0.0f, 1.0f);
 			}
 
 			if (type == wkbLineString)

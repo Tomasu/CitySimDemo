@@ -10,6 +10,8 @@
 
 struct FpsMonitorData
 {
+	FpsMonitorData() : rollingMeanFrameCount{0} {}
+	FpsMonitorData(int rmfc) : rollingMeanFrameCount{rmfc} {}
 	int rollingMeanFrameCount;
 };
 
@@ -20,6 +22,7 @@ class FpsMonitorComponent : public Qt3DCore::QComponent
 		Q_PROPERTY(float framesPerSecond READ framesPerSecond NOTIFY framesPerSecondChanged)
 
 	public:
+		FpsMonitorComponent() = delete;
 		explicit FpsMonitorComponent(Qt3DCore::QNode *parent = nullptr);
 
 		float framesPerSecond() const;

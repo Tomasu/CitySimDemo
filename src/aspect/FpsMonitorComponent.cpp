@@ -8,8 +8,8 @@
 
 FpsMonitorComponent::FpsMonitorComponent(Qt3DCore::QNode *parent)
 		: Qt3DCore::QComponent(parent)
-		, m_rollingMeanFrameCount(5)
-		, m_framesPerSecond(0.0f)
+		, m_framesPerSecond{0.0f}
+		, m_rollingMeanFrameCount{5}
 {
 }
 

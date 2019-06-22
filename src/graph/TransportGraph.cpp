@@ -31,12 +31,20 @@ TransportGraph::~TransportGraph()
 {
 }
 
-TransportGraph::Vertex TransportGraph::addVertex(const VertexId &vtxId, double x, double y)
+TransportGraph::Vertex TransportGraph::addVertex(const VertexId &vtxId, float x, float y, float z)
 {
-	VertexProperties props { vtxId, x, y };
+	VertexProperties props { vtxId, x, y, z };
 	Vertex newVtx = boost::add_vertex(props, mGraph);
 	return newVtx;
 }
+
+TransportGraph::TransportGraph::Vertex TransportGraph::addVertex(const VertexId& vtxId, const QVector3D& vec)
+{
+	VertexProperties props { vtxId, vec };
+	Vertex newVtx = boost::add_vertex(props, mGraph);
+	return newVtx;
+}
+
 
 TransportGraph::Edge TransportGraph::addEdge(const EdgeId &edgeId, const Vertex &a, const Vertex &b)
 {

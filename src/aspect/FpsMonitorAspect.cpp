@@ -11,6 +11,7 @@
 FpsMonitorAspect::FpsMonitorAspect(QObject *parent)
 		: Qt3DCore::QAbstractAspect(parent)
 		, m_updateMonitorsJob(new UpdateFpsMonitorsJob(this))
+		, m_lastTime{0}
 {
 	// Register the mapper to handle creation, lookup, and destruction of backend nodes
 	auto mapper = QSharedPointer<FpsMonitorMapper>::create(this);

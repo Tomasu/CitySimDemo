@@ -7,22 +7,31 @@
 
 #include <string>
 #include <vector>
+
 #include "quadtree/QuadTreeNodeItem.h"
 #include "graph/TransportGraph.h"
-#include "GeometryBuilder.h"
+
+#include <QVector>
+#include <QColor>
+#include <QVector3D>
+
+class GeometryBuilder;
 
 class RoadData : public QuadTreeNodeItem
 {
 	public:
 		explicit RoadData() = delete;
-		explicit RoadData(const QRectF &bounds, const std::string &mName, const std::string &mType);
+		explicit RoadData(const Rect &bounds, const std::string &mName, const std::string &mType);
+		RoadData(const Rect& bounds, const std::string& name, const std::string& type, const std::vector< QVector3D >& points);
 		~RoadData() = default;
 
 		RoadData(const RoadData&) = delete;
 		RoadData& operator=(const RoadData&) = delete;
 
-		void addFwdEdge(TransportGraph::Edge edge, const OGRPoint &begin, const OGRPoint &end);
-		void addRevEdge(TransportGraph::Edge edge, const OGRPoint &begin, const OGRPoint &end);
+		void addFwdEdge(const TransportGraph::Edge &edge, const QVector3D &begin, const QVector3D &end);
+		void addRevEdge(const TransportGraph::Edge &edge, const QVector3D &begin, const QVector3D &end);
+
+		void addSegment(const QVector3D &start, const QVector3D &end);
 
 		std::string getName() { return mName; }
 		std::string getType() { return mType; }
@@ -33,15 +42,27 @@ class RoadData : public QuadTreeNodeItem
 		const std::vector<TransportGraph::Edge> &getFwdEdges() { return mFwdEdges; }
 		const std::vector<TransportGraph::Edge> &getRevEdges() { return mRevEdges; }
 
+		const std::vector<QVector3D> &getPoints() const { return mPoints; }
+
+		std::vector<QuadTreeNodeItem*> split(const Rect &bounds, const Point &crossPoint) override;
+
+		bool isPartiallyContainedByRect(const Rect & rect) const override;
+
+		bool isContainedByRect(const Rect & rect) const override;
+
+		std::string toString() override;
+
 	private:
 		std::string mName;
 		std::string mType;
-		QVector<QPointF> mPoints;
+
+		std::vector<QVector3D> mPoints;
 
 		std::vector<TransportGraph::Edge> mFwdEdges;
 		std::vector<TransportGraph::Edge> mRevEdges;
 
 		void buildGeometry(GeometryBuilder *gb) override;
 };
+
 
 #endif //CITYSIM_ROADDATA_H

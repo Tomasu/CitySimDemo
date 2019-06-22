@@ -7,6 +7,7 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QDir>
 #include <Qt3DExtras/QPerVertexColorMaterial>
+#include <Qt3DRender/QObjectPicker>
 #include <Qt3DRender/QPickLineEvent>
 
 #include "ShpEntity.h"

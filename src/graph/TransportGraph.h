@@ -9,6 +9,8 @@
 #include "VertexProperties.h"
 #include "EdgeProperties.h"
 
+class QVector3D;
+
 typedef boost::adjacency_list<boost::vecS, boost::listS, boost::directedS, VertexProperties, EdgeProperties, boost::no_property> GraphType;
 
 class TransportGraph
@@ -56,7 +58,8 @@ class TransportGraph
 		TransportGraph();
 		virtual ~TransportGraph();
 
-		Vertex addVertex(const VertexId &vtxId, double x, double y);
+		Vertex addVertex(const VertexId &vtxId, float x, float y, float z);
+		Vertex addVertex(const VertexId &vtxId, const QVector3D &vec);
 		Edge addEdge(const EdgeId &edgeId, const Vertex &a, const Vertex &b);
 
 		void doit();
