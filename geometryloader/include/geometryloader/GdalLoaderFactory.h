@@ -6,7 +6,7 @@
 #define CITYSIM_GDALLOADERFACTORY_H
 
 
-#include "GeometryLoaderFactory.h"
+#include "geometryloader/GeometryLoaderFactory.h"
 
 class GDALLoaderFactory : public GeometryLoaderFactory
 {

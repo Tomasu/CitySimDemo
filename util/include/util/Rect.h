@@ -1,8 +1,6 @@
 #ifndef RECT_H
 #define RECT_H
 
-class QVector3D;
-
 #include "util/Size.h"
 #include "util/Point.h"
 
@@ -78,7 +76,6 @@ class Rect
 		void moveTo(float x, float y);
 
 		bool contains(float x, float y) const;
-		bool contains(const QVector3D &vec) const;
 		bool contains(const Point &vec) const;
 		bool contains(const Rect &r) const;
 

@@ -2,14 +2,15 @@
 // Created by moose on 29/03/19.
 //
 
-#include "GeometryBuilder.h"
-#include "BufferBuilder.h"
-#include "Line.h"
-#include "LineString.h"
+#include "core/GeometryBuilder.h"
+#include "core/BufferBuilder.h"
+#include "core/Line.h"
+#include "core/LineString.h"
 
 
 #include <iostream>
 #include <iomanip>
+
 #include <QDebug>
 #include <QColor>
 #include <QPainter>
@@ -22,7 +23,7 @@
 #include <ogr_geometry.h>
 
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 
 #define TAG "GeometryBuilder"
 
@@ -38,7 +39,7 @@ GeometryBuilder::GeometryBuilder(const Rect &bounds, float z)
 	mNumVerticies = 0;
 	mNumIndicies = 0;
 
-	mOrigin = QVector3D(bounds.left(), bounds.top(), z);
+	mOrigin = Point(bounds.left(), bounds.top(), z);
 
 	log_debug("bz %s new gb @ %s [%s]", mId, mBounds, mOrigin);
 
@@ -60,7 +61,7 @@ GeometryBuilder::GeometryBuilder(float origX, float origY, float origZ, int widt
 	mNumVerticies = 0;
 	mNumIndicies = 0;
 
-	mOrigin = QVector3D{origX, origY, origZ};
+	mOrigin = Point{origX, origY, origZ};
 
 	log_debug("fi %s new gb @ %s [%s]", mId, mBounds, mOrigin);
 
@@ -110,9 +111,9 @@ QVector3D ogrPointToQPoint(const OGRPoint &pt, const float origX, const float or
 	return { std::round((float)pt.getX() - origX), std::round((float)pt.getY() - origY), std::round((float)pt.getZ() - origZ) };
 }
 
-QVector3D GeometryBuilder::getMaxPos(){ return QVector3D(mMaxX, mMaxY, 0.0f); }
+Point GeometryBuilder::getMaxPos(){ return Point(mMaxX, mMaxY, 0.0f); }
 
-QVector3D GeometryBuilder::getMinPos(){ return QVector3D(mMinX, mMinY, 0.0f); }
+Point GeometryBuilder::getMinPos(){ return Point(mMinX, mMinY, 0.0f); }
 
 void GeometryBuilder::addLineString(const OGRLineString *lineString, const QColor &color)
 {
@@ -282,7 +283,7 @@ void GeometryBuilder::addLineString(const LineString& lineString)
 
 void GeometryBuilder::addLineString(const LineString& lineString, const QColor& color)
 {
-	for (const QVector3D &pt: lineString.getPoints())
+	for (const Point &pt: lineString.getPoints())
 	{
 		addPoint(pt, color);
 	}
@@ -321,19 +322,19 @@ void GeometryBuilder::addLineString(const LineString& lineString, const QColor& 
 }
 
 
-void GeometryBuilder::addLineString(const std::vector<QVector3D> &lineString)
+void GeometryBuilder::addLineString(const std::vector<Point> &lineString)
 {
 	addLineString(lineString, mCurrentColor);
 }
 
-void GeometryBuilder::addPolygon(const std::vector<QVector3D> &polygon)
+void GeometryBuilder::addPolygon(const std::vector<Point> &polygon)
 {
 
 }
 
-void GeometryBuilder::addPoint(const QVector3D &p, const QColor &color)
+void GeometryBuilder::addPoint(const Point &p, const QColor &color)
 {
-	QVector3D poff = p - mOrigin;
+	Point poff = p - mOrigin;
 	float x = poff.x();
 	float y = poff.y();
 	float z = poff.z();
@@ -411,11 +412,11 @@ LineString GeometryBuilder::getCurvePoints(const LineString &controls, float det
 
 	LineString renderingPoints;
 
-	std::vector<QVector3D> controlPoints;
+	std::vector<Point> controlPoints;
 
 	//generate the end and control points
 
-	for ( int i = 1; i < controls.size() - 1; i+=2 )
+	for ( size_t i = 1; i < controls.size() - 1; i+=2 )
 	{
 		controlPoints.push_back(center(controls[i-1], controls[i]));
 		controlPoints.push_back(controls[i]);
@@ -429,7 +430,7 @@ LineString GeometryBuilder::getCurvePoints(const LineString &controls, float det
 
 	//Generate the detailed points.
 
-	QVector3D a0, a1, a2, a3;
+	Point a0, a1, a2, a3;
 
 	for ( size_t i = 0; i < controlPoints.size() - 2; i+=4 )
 	{
@@ -478,9 +479,9 @@ LineString GeometryBuilder::getCurvePoints(const LineString &controls, float det
  * @return
  */
 
-QVector3D GeometryBuilder::cubicBezier(const QVector3D &p1, const QVector3D &p2, const QVector3D &p3, const QVector3D &p4, float t)
+Point GeometryBuilder::cubicBezier(const Point &p1, const Point &p2, const Point &p3, const Point &p4, float t)
 {
-	return QVector3D(
+	return Point(
 		cubicBezierPoint(p1.x(), p2.x(), p3.x(), p4.x(), t),
 							 cubicBezierPoint(p1.y(), p2.y(), p3.y(), p4.y(), t),
 							 cubicBezierPoint(p1.z(), p2.z(), p3.z(), p4.z(), t));
@@ -503,9 +504,9 @@ QVector3D GeometryBuilder::cubicBezier(const QVector3D &p1, const QVector3D &p2,
  *
  */
 
-QVector3D GeometryBuilder::quadBezier(const QVector3D &p1, const QVector3D &p2, const QVector3D &p3, float t)
+Point GeometryBuilder::quadBezier(const Point &p1, const Point &p2, const Point &p3, float t)
 {
-	return QVector3D(
+	return Point(
 		quadBezierPoint(p1.x(), p2.x(), p3.x(), t),
 							 quadBezierPoint(p1.y(), p2.y(), p3.y(), t),
 							 quadBezierPoint(p1.z(), p2.z(), p3.z(), t));
@@ -558,9 +559,9 @@ float GeometryBuilder::quadBezierPoint(float a0, float a1, float a2, float t)
  * @return
  */
 
-QVector3D GeometryBuilder::center(const QVector3D &p1, const QVector3D &p2)
+Point GeometryBuilder::center(const Point &p1, const Point &p2)
 {
-	return QVector3D(
+	return Point(
 		(p1.x() + p2.x()) / 2,
 			  (p1.y() + p2.y()) / 2,
 			  (p1.z() + p2.z()) / 2

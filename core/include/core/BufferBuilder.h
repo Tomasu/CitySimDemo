@@ -5,7 +5,7 @@
 #ifndef CITYSIM_BUFFERBUILDER_H
 #define CITYSIM_BUFFERBUILDER_H
 
-#include "Constants.h"
+#include "core/Constants.h"
 
 #include <cstddef>
 

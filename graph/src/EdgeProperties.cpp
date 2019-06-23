@@ -2,7 +2,7 @@
 // Created by moose on 03/04/19.
 //
 
-#include "EdgeProperties.h"
+#include "graph/EdgeProperties.h"
 
 uint32_t EdgeProperties::getId() const
 {

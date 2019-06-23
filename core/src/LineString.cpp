@@ -1,6 +1,6 @@
-#include "LineString.h"
+#include "core/LineString.h"
 
-LineString::LineString(const std::vector<QVector3D> &points) : mPoints{points}
+LineString::LineString(const std::vector<Point> &points) : mPoints{points}
 {
 }
 
@@ -13,27 +13,24 @@ LineString::LineString(const LineString& lineString)
 {
 }
 
-
 void LineString::append(const LineString& lineString)
 {
 	auto &pts = lineString.getPoints();
 	mPoints.insert(mPoints.end(), pts.begin(), pts.end());
 }
 
-
-
-void LineString::add(const QVector3D& pt)
+void LineString::add(const Point& pt)
 {
 	mPoints.push_back(pt);
 }
 
-const QVector3D & LineString::operator[](int idx) const
+const Point & LineString::operator[](int idx) const
 {
 	return mPoints.at(idx);
 }
 
 
-const std::vector<QVector3D> &LineString::getPoints() const
+const std::vector<Point> &LineString::getPoints() const
 {
 	return mPoints;
 }

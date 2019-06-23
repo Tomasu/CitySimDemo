@@ -3,11 +3,11 @@
 //
 
 #include <Qt3DCore/QPropertyUpdatedChange>
-#include "QuadTreeNodeGeometryRenderer.h"
-#include "QuadTreeNodeGeometry.h"
-#include "QuadTreeNodeGeometryFactory.h"
+#include "quadtree/QuadTreeNodeGeometryRenderer.h"
+#include "quadtree/QuadTreeNodeGeometry.h"
+#include "quadtree/QuadTreeNodeGeometryFactory.h"
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "QuadTreeNodeGeometryRenderer"
 
 QuadTreeNodeGeometryRenderer::QuadTreeNodeGeometryRenderer(QuadTreeNodeGeometryFactory *geometryFactory, Qt3DCore::QNode *parent)

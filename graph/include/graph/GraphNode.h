@@ -6,7 +6,7 @@
 #define CITYSIM_GRAPHNODE_H
 
 
-#include <QtCore/QVector>
+//#include <QtCore/QVector>
 
 class GraphNode
 {

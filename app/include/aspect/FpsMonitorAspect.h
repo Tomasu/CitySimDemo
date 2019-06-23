@@ -17,6 +17,7 @@ class FpsMonitorAspect : public Qt3DCore::QAbstractAspect
 	Q_OBJECT
 	public:
 		explicit FpsMonitorAspect(QObject *parent = nullptr);
+		virtual ~FpsMonitorAspect() {}
 
 		void addFpsMonitor(Qt3DCore::QNodeId id, FpsMonitorBackend *fpsMonitor);
 		FpsMonitorBackend *fpsMonitor(Qt3DCore::QNodeId id);

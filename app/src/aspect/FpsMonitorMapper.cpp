@@ -2,7 +2,7 @@
 // Created by moose on 05/04/19.
 //
 
-#include "FpsMonitorMapper.h"
+#include "aspect/FpsMonitorMapper.h"
 
 
 FpsMonitorMapper::FpsMonitorMapper(FpsMonitorAspect *aspect)

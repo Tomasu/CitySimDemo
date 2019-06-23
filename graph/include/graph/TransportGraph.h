@@ -6,10 +6,8 @@
 #define CITYSIM_TRANSPORTGRAPH_H
 
 #include <boost/graph/adjacency_list.hpp>
-#include "VertexProperties.h"
-#include "EdgeProperties.h"
-
-class QVector3D;
+#include "graph/VertexProperties.h"
+#include "graph/EdgeProperties.h"
 
 typedef boost::adjacency_list<boost::vecS, boost::listS, boost::directedS, VertexProperties, EdgeProperties, boost::no_property> GraphType;
 
@@ -59,7 +57,8 @@ class TransportGraph
 		virtual ~TransportGraph();
 
 		Vertex addVertex(const VertexId &vtxId, float x, float y, float z);
-		Vertex addVertex(const VertexId &vtxId, const QVector3D &vec);
+		Vertex addVertex(const VertexId &vtxId, const Point &pt);
+		//Vertex addVertex(const VertexId &vtxId, const QVector3D &vec);
 		Edge addEdge(const EdgeId &edgeId, const Vertex &a, const Vertex &b);
 
 		void doit();

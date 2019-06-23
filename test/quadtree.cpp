@@ -8,7 +8,7 @@
 
 #include "quadtree/QuadTreeNodeEntityFactory.h"
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "quadtreetest"
 
 class TestItem : public QuadTreeNodeItem

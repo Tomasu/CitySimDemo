@@ -8,7 +8,6 @@
 #include "quadtree/QuadTreeNode.h"
 
 #include "util/Rect.h"
-#include <QVector3D>
 
 class QuadTree : public QuadTreeNode
 {
@@ -18,8 +17,7 @@ class QuadTree : public QuadTreeNode
 		explicit QuadTree(QuadTreeNodeEntityFactory *entityFactory, const Rect &bounds, QuadTreeNodeMapper *mapper, size_t nodeSplitCount = QuadTreeNode::NODE_SPLIT_COUNT);
 		virtual ~QuadTree();
 
-		QuadTreeNode *findNode(const QVector3D &vec);
-		QuadTreeNode *findNode(const QPointF &pt);
+		QuadTreeNode *findNode(const Point &vec);
 
 		void dumpTree();
 

@@ -4,7 +4,7 @@
 
 #include "RootEntity.h"
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "RootEntity"
 
 void RootEntity::sceneChangeEvent(const Qt3DCore::QSceneChangePtr &change)

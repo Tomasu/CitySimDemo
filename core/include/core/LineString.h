@@ -2,26 +2,27 @@
 #define CITYSIM_LINESTRING_H
 
 #include <vector>
-#include <QVector3D>
+
+#include "util/Point.h"
 
 class LineString
 {
 	public:
 		LineString();
 		LineString(const LineString &lineString);
-		LineString(const std::vector<QVector3D> &points);
+		LineString(const std::vector<Point> &points);
 
-		void add(const QVector3D &pt);
-		const std::vector<QVector3D> &getPoints() const;
+		void add(const Point &pt);
+		const std::vector<Point> &getPoints() const;
 
 		void append(const LineString &lineString);
 
 		size_t size() const { return mPoints.size(); }
 
-		const QVector3D &operator[] (int idx) const;
+		const Point &operator[] (int idx) const;
 
 	private:
-		std::vector<QVector3D> mPoints;
+		std::vector<Point> mPoints;
 };
 
 #endif /* CITYSIM_LINESTRING_H */

@@ -3,13 +3,13 @@
 //
 
 
-#include "GeometryBuilder.h"
-#include "Constants.h"
-#include "QuadTreeNodeGeometry.h"
-#include "QuadTreeNodeGeometryGenerator.h"
-#include "QuadTreeNodeItem.h"
-#include "QuadTreeNode.h"
-#include "Line.h"
+#include "core/GeometryBuilder.h"
+#include "core/Constants.h"
+#include "quadtree/QuadTreeNodeGeometry.h"
+#include "quadtree/QuadTreeNodeGeometryGenerator.h"
+#include "quadtree/QuadTreeNodeItem.h"
+#include "quadtree/QuadTreeNode.h"
+#include "core/Line.h"
 
 #include <stdexcept>
 
@@ -21,7 +21,7 @@
 
 using namespace Qt3DRender;
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "QuadTreeNodeGeometry"
 
 QuadTreeNodeGeometry::QuadTreeNodeGeometry(QuadTreeNode *node, Qt3DCore::QNode *parent)
@@ -164,9 +164,9 @@ QByteArray QuadTreeNodeGeometry::generateVertexData()
 			ptr = ptr->getParent();
 		}
 
-		QVector3D topLeft({0,0,0});
+		Point topLeft({0,0,0});
 		Point reposBr = Point(bounds().bottomRight() - bounds().topLeft());
-		QVector3D bottomRight(reposBr.x(), reposBr.y(), 0.0f);
+		Point bottomRight(reposBr.x(), reposBr.y(), 0.0f);
 
 		Size size = bounds().size();
 		Rect boundsOffset = bounds();

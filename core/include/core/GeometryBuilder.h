@@ -5,16 +5,14 @@
 #ifndef CITYSIM_GEOMETRYBUILDER_H
 #define CITYSIM_GEOMETRYBUILDER_H
 
-#include "Constants.h"
+#include "core/Constants.h"
 
 #include "util/Rect.h"
 #include <stdint.h>
 
-#include <QVector3D>
-
 #include <vector>
 
-class QVector3D;
+class Point;
 class QVector4D;
 //class QByteArray;
 #include <QByteArray>
@@ -42,8 +40,8 @@ class GeometryBuilder
 		GeometryBuilder(float origX, float origY, float origZ, int width, int height);
 		~GeometryBuilder();
 
-		void addLineString(const std::vector<QVector3D> &lineString);
-		void addPolygon(const std::vector<QVector3D> &polygon);
+		void addLineString(const std::vector<Point> &lineString);
+		void addPolygon(const std::vector<Point> &polygon);
 
 		void addLine(const Line &line, const QColor &color);
 
@@ -62,8 +60,8 @@ class GeometryBuilder
 		const QByteArray &getVerticies();
 		const QByteArray &getIndicies();
 
-		QVector3D getMinPos();
-		QVector3D getMaxPos();
+		Point getMinPos();
+		Point getMaxPos();
 
 		void setColor(const QColor &color);
 
@@ -77,7 +75,7 @@ class GeometryBuilder
 		BufferBuilder<IDX_TYPE> *mIndexBuilder;
 
 		Rect mBounds;
-		QVector3D mOrigin;
+		Point mOrigin;
 
 		float mMinX;
 		float mMinY;
@@ -93,14 +91,14 @@ class GeometryBuilder
 
 		void addPoint(const OGRPoint &point, const QColor &color);
 
-		void addPoint(const QVector3D &point, const QColor &color);
+		void addPoint(const Point &point, const QColor &color);
 
       static LineString getCurvePoints(const LineString &controls, float detail);
-      static QVector3D cubicBezier(const QVector3D &p1, const QVector3D &p2, const QVector3D &p3, const QVector3D &p4, float t);
-      static QVector3D quadBezier(const QVector3D &p1, const QVector3D &p2, const QVector3D &p3, float t);
+      static Point cubicBezier(const Point &p1, const Point &p2, const Point &p3, const Point &p4, float t);
+      static Point quadBezier(const Point &p1, const Point &p2, const Point &p3, float t);
       static float cubicBezierPoint(float a0, float a1, float a2, float a3, float t);
       static float quadBezierPoint(float a0, float a1, float a2, float t);
-      static QVector3D center(const QVector3D &p1, const QVector3D &p2);
+      static Point center(const Point &p1, const Point &p2);
 
 		static int sId;
 		int mId;

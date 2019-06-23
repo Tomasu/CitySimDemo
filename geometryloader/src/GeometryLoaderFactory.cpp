@@ -3,9 +3,9 @@
 //
 
 #include <stdexcept>
-#include "GeometryLoaderFactory.h"
+#include "geometryloader/GeometryLoaderFactory.h"
 
-#include "GdalLoaderFactory.h"
+#include "geometryloader/GdalLoaderFactory.h"
 
 const GeometryLoaderFactory *GeometryLoaderFactory::FACTORIES[NUM_FACTORIES] = {
 		new GDALLoaderFactory()

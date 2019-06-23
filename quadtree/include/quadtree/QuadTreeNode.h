@@ -5,8 +5,9 @@
 #ifndef CITYSIM_QUADTREENODE_H
 #define CITYSIM_QUADTREENODE_H
 
-#include "Plane3D.h"
+//#include "core/Plane3D.h"
 #include "util/Rect.h"
+#include "util/Point.h"
 #include <cstdint>
 #include <vector>
 #include <memory>
@@ -26,7 +27,7 @@ class QuadTreeNodeMapper
 		QuadTreeNodeMapper() {}
 		virtual ~QuadTreeNodeMapper() {}
 
-		virtual QVector3D map(const QVector3D &vec) = 0;
+		virtual Point map(const Point &vec) = 0;
 };
 
 class QuadTreeNode
@@ -64,7 +65,7 @@ class QuadTreeNode
 
 		bool hasParent() const { return mParent != nullptr; }
 
-		QVector3D map(const QVector3D &vec);
+		Point map(const Point &vec);
 
 		const std::vector<QuadTreeNode*> &subNodes() const { return mSubNodes; }
 
@@ -101,7 +102,7 @@ class QuadTreeNode
 
 		QuadTreeNodeMapper *mMapper;
 
-		Plane3D mPlane;
+		//Plane3D mPlane;
 };
 
 #endif //CITYSIM_QUADTREENODE_H

@@ -1,9 +1,7 @@
 #ifndef CITYSIM_LINE_H_GUARD
 #define CITYSIM_LINE_H_GUARD
 
-#include <QtGui/QVector3D>
-class QVector3D;
-class Point;
+#include "util/Point.h"
 
 class Line
 {
@@ -14,11 +12,10 @@ class Line
 			Overlap
 		};
 
-		Line(const QVector3D &start, const QVector3D &end);
 		Line(const Point &start, const Point &end);
 
-		QVector3D start() const;
-		QVector3D end() const;
+		Point start() const;
+		Point end() const;
 
 		/**
 		 * @param other other line
@@ -26,13 +23,13 @@ class Line
 		 * @param I1 end point of intersect segment in case of overlap (when it exists)
 		 * @return IntersectType
 		 */
-		IntersectType intersect(const Line &other, QVector3D *I0, QVector3D *I1);
+		IntersectType intersect(const Line &other, Point *I0, Point *I1);
 
-		bool contains(const QVector3D &pt) const;
+		bool contains(const Point &pt) const;
 
 	private:
-		QVector3D mStart;
-		QVector3D mEnd;
+		Point mStart;
+		Point mEnd;
 };
 
 #endif /* CITYSIM_LINE_H_GUARD */

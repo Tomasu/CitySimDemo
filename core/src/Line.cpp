@@ -1,30 +1,26 @@
-#include "Line.h"
+#include "core/Line.h"
 
 #include <QtGui/QVector3D>
 
 #include "util/Point.h"
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
+#include "core/LogUtilsQt.h"
 #define TAG "Line"
 
-Line::Line(const QVector3D &start, const QVector3D &end)
-	: mStart{start}, mEnd(end)
-{
-}
-
 Line::Line(const Point& start, const Point& end)
-	: mStart{(float)start.x(), (float)start.y(), 0.0f},
-	mEnd{(float)end.x(), (float)end.y(), 0.0f}
+	: mStart{start},
+	mEnd{end}
 {
 }
 
 
-QVector3D Line::start() const
+Point Line::start() const
 {
 	return mStart;
 }
 
-QVector3D Line::end() const
+Point Line::end() const
 {
 	return mEnd;
 }
@@ -40,7 +36,7 @@ QVector3D Line::end() const
 //    Input:  a point P, and a collinear segment S
 //    Return: 1 = P is inside S
 //            0 = P is  not inside S
-bool Line::contains(const QVector3D &pt) const
+bool Line::contains(const Point &pt) const
 {
 	if (mStart.x() != mEnd.x())
 	{
@@ -72,11 +68,11 @@ bool Line::contains(const QVector3D &pt) const
 	return false;
 }
 
-Line::IntersectType Line::intersect(const Line& other, QVector3D* I0, QVector3D* I1)
+Line::IntersectType Line::intersect(const Line& other, Point* I0, Point* I1)
 {
-	QVector3D u = mEnd - mStart;
-	QVector3D v = other.mEnd - other.mStart;
-	QVector3D w = mStart - other.mStart;
+	Point u = mEnd - mStart;
+	Point v = other.mEnd - other.mStart;
+	Point w = mStart - other.mStart;
 	float D = perp(u,v);
 
 	// test if  they are parallel (includes either being a point)
@@ -134,7 +130,7 @@ Line::IntersectType Line::intersect(const Line& other, QVector3D* I0, QVector3D*
 
 		// they are collinear segments - get  overlap (or not)
 		float t0, t1; // endpoints of S1 in eqn for S2
-		QVector3D w2 = mEnd - other.mStart;
+		Point w2 = mEnd - other.mStart;
 		if (v.x() != 0)
 		{
 			t0 = w.x() / v.x();

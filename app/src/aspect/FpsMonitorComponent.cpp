@@ -3,7 +3,7 @@
 //
 
 #include <Qt3DCore/QPropertyUpdatedChange>
-#include "FpsMonitorComponent.h"
+#include "aspect/FpsMonitorComponent.h"
 
 
 FpsMonitorComponent::FpsMonitorComponent(Qt3DCore::QNode *parent)

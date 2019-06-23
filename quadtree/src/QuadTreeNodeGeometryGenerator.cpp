@@ -2,10 +2,10 @@
 // Created by moose on 05/04/19.
 //
 
-#include "QuadTreeNodeGeometryGenerator.h"
-#include "QuadTreeNodeGeometry.h"
+#include "quadtree/QuadTreeNodeGeometryGenerator.h"
+#include "quadtree/QuadTreeNodeGeometry.h"
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "QuadTreeNodeGeometryGenerator"
 
 bool QuadTreeNodeGeometryGenerator::operator== ( const Qt3DRender::QBufferDataGenerator& other ) const

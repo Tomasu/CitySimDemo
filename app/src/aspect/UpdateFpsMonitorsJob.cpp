@@ -2,10 +2,10 @@
 // Created by moose on 05/04/19.
 //
 
-#include "UpdateFpsMonitorsJob.h"
+#include "aspect/UpdateFpsMonitorsJob.h"
 
-#include "FpsMonitorAspect.h"
-#include "FpsMonitorBackend.h"
+#include "aspect/FpsMonitorAspect.h"
+#include "aspect/FpsMonitorBackend.h"
 
 UpdateFpsMonitorsJob::UpdateFpsMonitorsJob(FpsMonitorAspect *aspect)
 		: Qt3DCore::QAspectJob(),

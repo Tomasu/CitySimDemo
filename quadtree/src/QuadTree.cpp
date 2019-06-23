@@ -2,8 +2,8 @@
 // Created by moose on 04/04/19.
 //
 
-#include "QuadTree.h"
-#include "LogUtils.h"
+#include "quadtree/QuadTree.h"
+#include "util/LogUtils.h"
 
 #include <cstdint>
 #include "util/Rect.h"
@@ -19,7 +19,7 @@ QuadTree::~QuadTree()
 {
 }
 
-QuadTreeNode *QuadTree::findNode(const QVector3D& vec)
+QuadTreeNode *QuadTree::findNode(const Point& vec)
 {
 	std::vector<QuadTreeNode*> queue(subNodes());
 
@@ -30,7 +30,7 @@ QuadTreeNode *QuadTree::findNode(const QVector3D& vec)
 
 		log_debug("node: @ %s", node->bounds());
 
-		if (node->bounds().contains(vec.x(), vec.y()))
+		if (node->bounds().contains(vec))
 		{
 			log_debug("contains vec!");
 			// if we have sub nodes, we don't have items.
@@ -52,12 +52,6 @@ QuadTreeNode *QuadTree::findNode(const QVector3D& vec)
 
 	return nullptr;
 }
-
-QuadTree::QuadTreeNode * QuadTree::findNode(const QPointF& pt)
-{
-	return findNode(QVector3D{(float)pt.x(), (float)pt.y(), 0.0f});
-}
-
 
 void QuadTree::dumpTree()
 {

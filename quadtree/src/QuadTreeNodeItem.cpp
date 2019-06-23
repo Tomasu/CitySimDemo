@@ -2,9 +2,9 @@
 // Created by moose on 04/04/19.
 //
 
-#include "QuadTreeNodeItem.h"
+#include "quadtree/QuadTreeNodeItem.h"
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "QuadTreeNodeItem"
 
 template<>
@@ -19,4 +19,26 @@ std::ostream & operator << (std::ostream &out, QuadTreeNodeItem * const &d)
 	out << AnyToString(d);
 
 	return out;
+}
+
+#include <sstream>
+
+template<> std::string AnyToString(const std::vector<QuadTreeNodeItem*> &d)
+{
+	std::stringstream sstr;
+
+	bool haveItem = false;
+	for (auto &item: d)
+	{
+		if (haveItem)
+		{
+			sstr << ", ";
+		}
+
+		sstr << item->toString();
+
+		haveItem = true;
+	}
+
+	return sstr.str();
 }

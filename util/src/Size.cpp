@@ -1,5 +1,5 @@
-#include "Size.h"
-#include "Math.h"
+#include "util/Size.h"
+#include "util/Math.h"
 
 Size::Size()
 	: mWidth{0.0f}, mHeight{0.0f}

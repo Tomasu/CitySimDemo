@@ -7,15 +7,15 @@
 
 #include <cstdint>
 
-#include <QVector3D>
-
 typedef uint32_t VertexId;
+
+#include "util/Point.h"
 
 class VertexProperties
 {
 	public:
 		VertexProperties(VertexId id, float x, float y, float z) : mId(id), mX(x), mY(y), mZ(z) { }
-		VertexProperties(VertexId id, const QVector3D &vec) : mId(id), mX(vec.x()), mY(vec.y()), mZ(vec.z()) { }
+		VertexProperties(VertexId id, const Point &vec) : mId(id), mX(vec.x()), mY(vec.y()), mZ(vec.z()) { }
 
 		VertexId
 		getId() const

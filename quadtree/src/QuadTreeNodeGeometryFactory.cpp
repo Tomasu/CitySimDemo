@@ -2,11 +2,11 @@
 // Created by moose on 05/04/19.
 //
 
-#include "QuadTreeNode.h"
-#include "QuadTreeNodeGeometry.h"
-#include "QuadTreeNodeGeometryFactory.h"
+#include "quadtree/QuadTreeNode.h"
+#include "quadtree/QuadTreeNodeGeometry.h"
+#include "quadtree/QuadTreeNodeGeometryFactory.h"
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "QuadTreeNodeGeometryFactory"
 
 QuadTreeNodeGeometryFactory::QuadTreeNodeGeometryFactory(QuadTreeNode *node)

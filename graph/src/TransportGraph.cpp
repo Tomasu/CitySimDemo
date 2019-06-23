@@ -2,7 +2,7 @@
 // Created by moose on 02/04/19.
 //
 
-#include "TransportGraph.h"
+#include "graph/TransportGraph.h"
 #include <boost/graph/adjacency_list.hpp>
 
 void TransportGraph::doit()
@@ -38,7 +38,7 @@ TransportGraph::Vertex TransportGraph::addVertex(const VertexId &vtxId, float x,
 	return newVtx;
 }
 
-TransportGraph::TransportGraph::Vertex TransportGraph::addVertex(const VertexId& vtxId, const QVector3D& vec)
+TransportGraph::TransportGraph::Vertex TransportGraph::addVertex(const VertexId& vtxId, const Point& vec)
 {
 	VertexProperties props { vtxId, vec };
 	Vertex newVtx = boost::add_vertex(props, mGraph);

@@ -2,10 +2,10 @@
 // Created by moose on 05/04/19.
 //
 
-#include "FpsMonitorAspect.h"
-#include "FpsMonitorMapper.h"
-#include "UpdateFpsMonitorsJob.h"
-#include "FpsMonitorComponent.h"
+#include "aspect/FpsMonitorAspect.h"
+#include "aspect/FpsMonitorMapper.h"
+#include "aspect/UpdateFpsMonitorsJob.h"
+#include "aspect/FpsMonitorComponent.h"
 
 
 FpsMonitorAspect::FpsMonitorAspect(QObject *parent)

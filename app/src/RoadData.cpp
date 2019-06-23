@@ -6,15 +6,14 @@
 
 
 #include "quadtree/QuadTreeNode.h"
-#include "LineString.h"
-#include "GeometryBuilder.h"
-#include "Plane3D.h"
+#include "core/LineString.h"
+#include "core/GeometryBuilder.h"
+#include "util/Plane3D.h"
 #include "util/Rect.h"
-#include "Line.h"
-#include <QVector3D>
+#include "core/Line.h"
 #include <QLineF>
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "RoadData"
 
 RoadData::RoadData(const Rect &bounds, const std::string &name, const std::string &type)
@@ -23,13 +22,13 @@ RoadData::RoadData(const Rect &bounds, const std::string &name, const std::strin
 
 }
 
-RoadData::RoadData(const Rect& bounds, const std::string& name, const std::string& type, const std::vector<QVector3D>& points)
+RoadData::RoadData(const Rect& bounds, const std::string& name, const std::string& type, const std::vector<Point>& points)
 	: QuadTreeNodeItem(bounds), mName(name), mType(type), mPoints(points)
 {
 }
 
 
-void RoadData::addFwdEdge(const TransportGraph::Edge &edge, const QVector3D &begin, const QVector3D &end)
+void RoadData::addFwdEdge(const TransportGraph::Edge &edge, const Point &begin, const Point &end)
 {
 //	log_trace_enter();
 	mFwdEdges.push_back(edge);
@@ -37,7 +36,7 @@ void RoadData::addFwdEdge(const TransportGraph::Edge &edge, const QVector3D &beg
 // 	mPoints.append(end);
 }
 
-void RoadData::addRevEdge(const TransportGraph::Edge &edge, const QVector3D &begin, const QVector3D &end)
+void RoadData::addRevEdge(const TransportGraph::Edge &edge, const Point &begin, const Point &end)
 {
 //	log_trace_enter();
 	mRevEdges.push_back(edge);
@@ -45,7 +44,7 @@ void RoadData::addRevEdge(const TransportGraph::Edge &edge, const QVector3D &beg
 // 	mPoints.append(end);
 }
 
-void RoadData::addSegment(const QVector3D& start, const QVector3D& end)
+void RoadData::addSegment(const Point& start, const Point& end)
 {
 	mPoints.push_back(start);
 	mPoints.push_back(end);
@@ -56,8 +55,8 @@ void RoadData::buildGeometry(GeometryBuilder *gb)
 {
 	//log_trace_enter();
 
-// 	QVector<QVector3D> adjPoints = mPoints;
-// 	for (QVector3D &pt: adjPoints)
+// 	QVector<Point> adjPoints = mPoints;
+// 	for (Point &pt: adjPoints)
 // 	{
 // 		pt += mOffset;
 // 	}
@@ -68,7 +67,7 @@ void RoadData::buildGeometry(GeometryBuilder *gb)
 }
 
 #include <limits>
-static Rect calcBounds(const std::vector<QVector3D> &items)
+static Rect calcBounds(const std::vector<Point> &items)
 {
 	Rect bounds;
 
@@ -77,7 +76,7 @@ static Rect calcBounds(const std::vector<QVector3D> &items)
 	float minY = std::numeric_limits<float>::max();
 	float maxY = std::numeric_limits<float>::min();
 
-	for (QVector3D vec: items)
+	for (Point vec: items)
 	{
 		if (vec.x() < minX)
 		{
@@ -112,14 +111,14 @@ bool RoadData::isPartiallyContainedByRect(const Rect& rect) const
 
 	bool atLeastOneContained = false;
 	bool atLeastOneNonContained = false;
-	QVector3D lastNonContained;
-	QVector3D lastContained;
+	Point lastNonContained;
+	Point lastContained;
 
 	Rect adjRect = rect;
 	adjRect.setWidth(rect.size().width()-0.0000001);
 	adjRect.setHeight(rect.size().height()-0.000001);
 
-	for(const QVector3D &vec: mPoints)
+	for(const Point &vec: mPoints)
 	{
 		// rect.contains(vec.x(), vec.y());
 		bool contained = adjRect.contains(vec);
@@ -159,7 +158,7 @@ bool RoadData::isContainedByRect(const Rect& rect) const
 // 	adjRect.setWidth(rect.size().width()-0.01);
 // 	adjRect.setHeight(rect.size().height()-0.01);
 
-	for (const QVector3D &point: mPoints)
+	for (const Point &point: mPoints)
 	{
 		if (!rect.contains(point))
 		{
@@ -185,7 +184,7 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 
 	RoadData *newItem = nullptr;
 
-	std::vector<QVector3D> curPoints;
+	std::vector<Point> curPoints;
 
 	Size subRectSize = bounds.size()/2;
 
@@ -194,14 +193,14 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 	Rect bottomLeft = Rect(Point(bounds.left(), bounds.center().y()), subRectSize);
 	Rect bottomRight = Rect(bounds.center(), subRectSize);
 
-	QVector3D vertV0 = QVector3D(bounds.center().x(), bounds.top(), 0.0f);
-	QVector3D vertV1 = QVector3D(bounds.center().x(), bounds.bottom(), 0.0f);
-	QVector3D vertV2 = QVector3D(bounds.center().x(), bounds.center().y(), 1000.0f);
+	Point vertV0 = Point(bounds.center().x(), bounds.top(), 0.0f);
+	Point vertV1 = Point(bounds.center().x(), bounds.bottom(), 0.0f);
+	Point vertV2 = Point(bounds.center().x(), bounds.center().y(), 1000.0f);
 	//Plane3D vertPlane = {vertV0, vertV1, vertV2};
 
-	QVector3D horizV0 = QVector3D(bounds.left(), bounds.center().y(), 0.0f);
-	QVector3D horizV1 = QVector3D(bounds.right(), bounds.center().y(), 0.0f);
-	QVector3D horizV2 = QVector3D(bounds.center().x(), bounds.center().y(), 1000.0f);
+	Point horizV0 = Point(bounds.left(), bounds.center().y(), 0.0f);
+	Point horizV1 = Point(bounds.right(), bounds.center().y(), 0.0f);
+	Point horizV2 = Point(bounds.center().x(), bounds.center().y(), 1000.0f);
 	//Plane3D horizPlane = {horizV0, horizV1, horizV2};
 
 	Line vertLine = Line(Point(bounds.center().x(), bounds.top()), Point(bounds.center().x(), bounds.bottom()));
@@ -209,7 +208,7 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 
 	int numPoints = mPoints.size();
 
-	std::vector<QVector3D> points = mPoints;
+	std::vector<Point> points = mPoints;
 
 // 	for (auto &pt: mPoints)
 // 	{
@@ -218,8 +217,8 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 
 	for(size_t i = 0; i < points.size()-1; i+=2)
 	{
-		QVector3D sVec = points[i];
-		QVector3D eVec = points[i+1];
+		Point sVec = points[i];
+		Point eVec = points[i+1];
 
 		log_debug("segment: %s", Line{sVec, eVec});
 
@@ -228,8 +227,8 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 
 		curPoints.push_back(sVec);
 
-		QVector3D vertIntersectPt;
-		QVector3D horizIntersectPt;
+		Point vertIntersectPt;
+		Point horizIntersectPt;
 // 		bool vertIntersection = vertPlane.intersects(sVec, eVec, &vertIntersectPt) == Plane3D::IntersectUnique;
 // 		bool horizIntersection = horizPlane.intersects(sVec, eVec, &horizIntersectPt) == Plane3D::IntersectUnique;
 
@@ -237,7 +236,7 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 
 		int vertIntersectCount = 0;
 
-		QVector3D vertIntersectEndPt;
+		Point vertIntersectEndPt;
 		Line::IntersectType vertIntersection = curLine.intersect(vertLine, &vertIntersectPt, &vertIntersectEndPt);
 		if (vertIntersection == Line::Intersect || vertIntersection == Line::Overlap)
 		{
@@ -276,7 +275,7 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 
 		int horizIntersectCount = 0;
 
-		QVector3D horizIntersectEndPt;
+		Point horizIntersectEndPt;
 		Line::IntersectType horizIntersection = curLine.intersect(horizLine, &horizIntersectPt, &horizIntersectEndPt);
 		if (horizIntersection == Line::Intersect || horizIntersection == Line::Overlap)
 		{
@@ -340,7 +339,7 @@ std::vector<QuadTreeNodeItem*> RoadData::split(const Rect& bounds, const Point& 
 		if ((vertIntersection && vertIntersectPt != sVec && vertIntersectPt != eVec)
 			|| (horizIntersection && horizIntersectPt != sVec && horizIntersectPt != eVec))
 		{
-			QVector3D intersectPt = vertIntersection ? vertIntersectPt : horizIntersectPt;
+			Point intersectPt = vertIntersection ? vertIntersectPt : horizIntersectPt;
 
 			//log_debug(" intersection at %s (between %s and %s with %s plane)", intersectPt, sVec, eVec, vertIntersection ? "vert" : "horiz");
 

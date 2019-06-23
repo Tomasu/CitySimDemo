@@ -1,7 +1,3 @@
-//
-// Created by moose on 05/04/19.
-//
-
 #ifndef CITYSIM_QUADTREENODEENTITY_H
 #define CITYSIM_QUADTREENODEENTITY_H
 
@@ -23,7 +19,7 @@ namespace Qt3DRender {
 	class QPickEvent;
 }
 
-class MainWindow;
+class QWindow;
 class QuadTreeNode;
 class QuadTreeNodeEntity;
 class QuadTreeNodeGeometryRenderer;
@@ -32,7 +28,7 @@ class QuadTreeNodeEntity : public Qt3DCore::QEntity
 {
 	Q_OBJECT
 	public:
-		explicit QuadTreeNodeEntity(QuadTreeNode *node, MainWindow *mw, Qt3DCore::QNode *parent = nullptr);
+		explicit QuadTreeNodeEntity(QuadTreeNode *node, QWindow *mw, Qt3DCore::QNode *parent = nullptr);
 		~QuadTreeNodeEntity() override;
 
 		QuadTreeNodeGeometryRenderer *renderer() { return mRenderer; }
@@ -54,7 +50,7 @@ class QuadTreeNodeEntity : public Qt3DCore::QEntity
 		Qt3DRender::QMaterial *mMaterial;
 		QuadTreeNodeGeometryRenderer *mRenderer;
 		Qt3DRender::QObjectPicker *mPicker;
-		MainWindow *mMainWindow;
+		QWindow *mMainWindow;
 
 };
 

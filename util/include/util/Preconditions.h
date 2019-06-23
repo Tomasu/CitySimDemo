@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include "NullPointerException.h"
+#include "util/NullPointerException.h"
 
 template<typename T>
 T *checkNotNull(T *arg, const std::string &message)

@@ -2,13 +2,14 @@
 // Created by moose on 18/04/19.
 //
 
+#include "geometryloader/GdalLoaderFactory.h"
+#include "geometryloader/GdalLoader.h"
+
 #include <QtCore/QFileInfo>
 #include <QtCore/QDir>
 #include <gdal_priv.h>
-#include "src/LogUtils.h"
-#include "GdalLoaderFactory.h"
 
-#include "GdalLoader.h"
+#include "util/LogUtils.h"
 
 #define TAG "GDALLoaderFactory"
 

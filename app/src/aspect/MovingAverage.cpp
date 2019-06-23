@@ -2,7 +2,7 @@
 // Created by moose on 05/04/19.
 //
 
-#include "MovingAverage.h"
+#include "aspect/MovingAverage.h"
 
 
 MovingAverage::MovingAverage(unsigned int samples)

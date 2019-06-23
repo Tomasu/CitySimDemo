@@ -132,9 +132,6 @@ T formatString_(const LogLineInfo &info__, T out, int outLen,
   return out;
 }
 
-class QVector3D;
-std::ostream & operator << (std::ostream &out, const QVector3D &v);
-
 #include <vector>
 #include <ostream>
 template<typename T>

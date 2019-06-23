@@ -22,16 +22,16 @@ class RoadData : public QuadTreeNodeItem
 	public:
 		explicit RoadData() = delete;
 		explicit RoadData(const Rect &bounds, const std::string &mName, const std::string &mType);
-		RoadData(const Rect& bounds, const std::string& name, const std::string& type, const std::vector< QVector3D >& points);
+		RoadData(const Rect& bounds, const std::string& name, const std::string& type, const std::vector< Point >& points);
 		~RoadData() = default;
 
 		RoadData(const RoadData&) = delete;
 		RoadData& operator=(const RoadData&) = delete;
 
-		void addFwdEdge(const TransportGraph::Edge &edge, const QVector3D &begin, const QVector3D &end);
-		void addRevEdge(const TransportGraph::Edge &edge, const QVector3D &begin, const QVector3D &end);
+		void addFwdEdge(const TransportGraph::Edge &edge, const Point &begin, const Point &end);
+		void addRevEdge(const TransportGraph::Edge &edge, const Point &begin, const Point &end);
 
-		void addSegment(const QVector3D &start, const QVector3D &end);
+		void addSegment(const Point &start, const Point &end);
 
 		std::string getName() { return mName; }
 		std::string getType() { return mType; }
@@ -42,7 +42,7 @@ class RoadData : public QuadTreeNodeItem
 		const std::vector<TransportGraph::Edge> &getFwdEdges() { return mFwdEdges; }
 		const std::vector<TransportGraph::Edge> &getRevEdges() { return mRevEdges; }
 
-		const std::vector<QVector3D> &getPoints() const { return mPoints; }
+		const std::vector<Point> &getPoints() const { return mPoints; }
 
 		std::vector<QuadTreeNodeItem*> split(const Rect &bounds, const Point &crossPoint) override;
 
@@ -56,7 +56,7 @@ class RoadData : public QuadTreeNodeItem
 		std::string mName;
 		std::string mType;
 
-		std::vector<QVector3D> mPoints;
+		std::vector<Point> mPoints;
 
 		std::vector<TransportGraph::Edge> mFwdEdges;
 		std::vector<TransportGraph::Edge> mRevEdges;

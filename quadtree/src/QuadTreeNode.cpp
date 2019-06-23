@@ -1,5 +1,4 @@
 #include <memory>
-#include "LogUtils.h"
 
 //
 // Created by moose on 04/04/19.
@@ -14,8 +13,7 @@
 
 #include "util/Size.h"
 
-#include <QVector3D>
-
+#include "util/LogUtils.h"
 #define TAG "QuadTreeNode"
 
 QuadTreeNode::QuadTreeNode(QuadTreeNode *parent, QuadTreeNodeEntityFactory *entityFactory, const Rect &bounds, QuadTreeNodeMapper *mapper, size_t nodeSplitCount)
@@ -25,8 +23,8 @@ QuadTreeNode::QuadTreeNode(QuadTreeNode *parent, QuadTreeNodeEntityFactory *enti
 		mEntityFactory(entityFactory),
 		mNodeSplitCount{nodeSplitCount},
 		mEntity{nullptr},
-		mMapper{mapper},
-		mPlane{bounds, 0.0f}
+		mMapper{mapper}
+		//mPlane{bounds, 0.0f}
 {
 	mGeometry = nullptr;
 }
@@ -157,7 +155,7 @@ static bool itemIntersects(QuadTreeNode *node, QuadTreeNodeItem *item)
 		item->isPartiallyContainedByRect(nodeBounds);
 }
 
-#include "RoadData.h"
+//#include "RoadData.h"
 
 void QuadTreeNode::splitNode()
 {
@@ -203,7 +201,7 @@ void QuadTreeNode::splitNode()
 		Rect nodeBounds = bounds();
 		Point nodeCenter = nodeBounds.center();
 
-		QVector<QVector3D> newPoints;
+		std::vector<Point> newPoints;
 
 		auto it = queue.begin();
 		for (size_t i = 0; i < queue.size(); i++)
@@ -372,7 +370,7 @@ QuadTreeNodeGeometry *QuadTreeNode::getGeometry()
 	return mGeometry;
 }
 
-QVector3D QuadTreeNode::map(const QVector3D& vec)
+Point QuadTreeNode::map(const Point& vec)
 {
 	return mMapper->map(vec);
 }

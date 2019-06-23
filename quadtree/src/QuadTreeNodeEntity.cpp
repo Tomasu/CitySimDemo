@@ -3,10 +3,10 @@
 //
 
 #include <Qt3DExtras/QPerVertexColorMaterial>
-#include "QuadTreeNode.h"
-#include "QuadTreeNodeEntity.h"
-#include "QuadTreeNodeGeometryFactory.h"
-#include "QuadTreeNodeGeometryRenderer.h"
+#include "quadtree/QuadTreeNode.h"
+#include "quadtree/QuadTreeNodeEntity.h"
+#include "quadtree/QuadTreeNodeGeometryFactory.h"
+#include "quadtree/QuadTreeNodeGeometryRenderer.h"
 #include "util/Rect.h"
 
 #include <Qt3DRender/QObjectPicker>
@@ -19,13 +19,12 @@
 
 #include <Qt3DExtras/QPerVertexColorMaterial>
 
-#include "RoadData.h"
-#include "MainWindow.h"
+#include <QtGui/QWindow>
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "QuadTreeNodeEntity"
 
-QuadTreeNodeEntity::QuadTreeNodeEntity(QuadTreeNode *node, MainWindow *mw, Qt3DCore::QNode *parent)
+QuadTreeNodeEntity::QuadTreeNodeEntity(QuadTreeNode *node, QWindow *mw, Qt3DCore::QNode *parent)
 	: QEntity(parent), mNode{node}, mPicker{nullptr}
 {
 	log_trace_enter();
@@ -99,7 +98,7 @@ void QuadTreeNodeEntity::mousePositionChanged(Qt3DInput::QMouseEvent* ev)
 {
 	//if (mMouseHandler->containsMouse())
 	{
-		QVector3D mapped = mNode->map({(float)ev->x(), (float)ev->y(), 0.0f});
+		Point mapped = mNode->map({(float)ev->x(), (float)ev->y(), 0.0f});
 
 		Rect bounds = mNode->bounds();
 		//log_debug("bounds: %sx%s %sx%s ms: %sx%s", bounds.left(), bounds.top(), bounds.right(), bounds.bottom(), mapped.x(), mapped.y());

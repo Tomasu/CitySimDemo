@@ -15,7 +15,7 @@
 
 #include "RootEntity.h"
 
-#include "Constants.h"
+#include "core/Constants.h"
 
 #include <QtCore/QFileInfo>
 #include <QtCore/QDir>
@@ -64,7 +64,7 @@
 #include <memory.h>
 #include <string.h>
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 
 
 #define TAG "MainWindow"
@@ -116,10 +116,11 @@ class MainQuadTreeNodeMapper : public QuadTreeNodeMapper
 			// nada
 		}
 
-		QVector3D map(const QVector3D &vec)
+		Point map(const Point &vec)
 		{
 			QMatrix4x4 matrix = mMainWindow->camera()->viewMatrix();
-			return matrix.mapVector(vec);
+			QVector3D mapped = matrix.mapVector(QVector3D(vec.x(), vec.y(), vec.z()));
+			return {mapped.x(), mapped.y(), mapped.z()};
 		}
 };
 
@@ -416,7 +417,9 @@ void MainWindow::frameActionTriggered(float dt)
 	QVector4D unprojTrans = mapMatrix * QVector4D{unprojfff, 1.0f};//(rootMatrix*mapMatrix.inverted()).map(unproj);
 	log_debug("unprojTrans: %s", unprojTrans);
 
-	QuadTreeNode *node = mRoadsQuadTree->findNode(unprojTrans.toVector3D());
+	QVector3D unprojTrans3D = unprojTrans.toVector3D();
+	Point unprojPt = {unprojTrans3D.x(), unprojTrans3D.y(), unprojTrans3D.z()};
+	QuadTreeNode *node = mRoadsQuadTree->findNode(unprojPt);
 	if (node != nullptr)
 	{
 		log_debug("\t-> in node %s", node->bounds());
@@ -567,7 +570,7 @@ void MainWindow::buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *da
 	std::map<DoublePair, TransportGraph::Vertex> vertices;
 
 	Point topLeft = extRect.topLeft();
-	QVector3D offsetp = QVector3D{(float)topLeft.x(), (float)topLeft.y(), BASE_Z_OFFSET};
+	Point offsetp = Point{(float)topLeft.x(), (float)topLeft.y(), BASE_Z_OFFSET};
 
 	while ((poFeature = layer->GetNextFeature()))
 	{
@@ -634,8 +637,8 @@ void MainWindow::buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *da
 			float ey = endPt.getY();
 			float ez = BASE_Z_OFFSET;//endPt.getZ();
 
-			QVector3D qsp = QVector3D(sx, sy, sz) - offsetp;
-			QVector3D qep = QVector3D(ex, ey, ez) - offsetp;
+			Point qsp = Point(sx, sy, sz) - offsetp;
+			Point qep = Point(ex, ey, ez) - offsetp;
 
 			auto vtx1it = vertices.find(std::make_pair(qsp.x(), qsp.y()));
 			if (vtx1it == vertices.end())
@@ -765,7 +768,8 @@ void MainWindow::createScene(Qt3DCore::QEntity *rootEntity, const QString &path)
 		QMatrix4x4 mm = (mCamera->viewMatrix() * mMapTransform->matrix()).inverted();
 		log_debug("ev world-mod: %s", mm * ev->worldIntersection());
 
-		QuadTreeNode *node = mRoadsQuadTree->findNode(ev->localIntersection());
+		QVector3D locInt = ev->localIntersection();
+		QuadTreeNode *node = mRoadsQuadTree->findNode(Point{locInt.x(), locInt.y(), locInt.z()});
 		if (node != nullptr)
 		{
 			log_debug("got node! %s", node->bounds());

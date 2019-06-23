@@ -7,7 +7,7 @@
 
 
 #include <string>
-#include "GeometryLoader.h"
+#include "geometryloader/GeometryLoader.h"
 
 class GDALLoader : public GeometryLoader
 {

@@ -6,7 +6,7 @@
 #define CITYSIM_GEOMETRYLOADERFACTORY_H
 
 #include <string>
-#include "GeometryLoader.h"
+#include "geometryloader/GeometryLoader.h"
 
 class GeometryLoaderFactory
 {

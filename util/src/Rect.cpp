@@ -1,11 +1,11 @@
 #include "util/Rect.h"
 #include "util/Math.h"
 
-#include "Size.h"
-#include <QVector3D>
+#include "util/Size.h"
+
 #include <cmath>
 
-#include "LogUtils.h"
+#include "util/LogUtils.h"
 #define TAG "Rect"
 
 Rect::Rect()
@@ -64,12 +64,6 @@ bool Rect::contains(float x, float y) const
 }
 
 bool Rect::contains(const Point& vec) const
-{
-	return contains(vec.x(), vec.y());
-}
-
-
-bool Rect::contains(const QVector3D& vec) const
 {
 	return contains(vec.x(), vec.y());
 }

@@ -3,9 +3,9 @@
 //
 
 #include <Qt3DCore/QPropertyUpdatedChange>
-#include "FpsMonitorBackend.h"
-#include "FpsMonitorComponent.h"
-#include "MovingAverage.h"
+#include "aspect/FpsMonitorBackend.h"
+#include "aspect/FpsMonitorComponent.h"
+#include "aspect/MovingAverage.h"
 
 
 FpsMonitorBackend::FpsMonitorBackend()
