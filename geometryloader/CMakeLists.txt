@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
-project(libgeometryloader VERSION 0.1.0 LANGUAGES CXX)
+#cmake_minimum_required(VERSION 3.0)
+#project(libgeometryloader VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(Qt5 CONFIG REQUIRED Core Gui)
 find_package(GDAL REQUIRED)

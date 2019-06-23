@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
-project(libutil VERSION 0.1.0 LANGUAGES CXX)
+#cmake_minimum_required(VERSION 3.0)
+#project(libutil VERSION 0.1.0 LANGUAGES CXX)
 
 set(SRC
 	src/NullPointerException.cpp

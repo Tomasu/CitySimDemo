@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
-project(libgraph VERSION 0.1.0 LANGUAGES CXX)
+#cmake_minimum_required(VERSION 3.0)
+#project(libgraph VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(Boost REQUIRED COMPONENTS graph)
 

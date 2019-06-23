@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
-project(libcore VERSION 0.1.0 LANGUAGES CXX)
+#cmake_minimum_required(VERSION 3.0)
+#project(libcore VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_PREFIX_PATH "/home/moose/build/Qt/5.12.3/gcc_64/lib/cmake;${CMAKE_PREFIX_PATH}")
 find_package(Qt5 CONFIG REQUIRED Core Gui 3DCore 3DRender)
