@@ -20,7 +20,8 @@ class Plane3D
 
 		IntersectType intersects(const QVector3D &p1, const QVector3D &p2, QVector3D *intersection);
 
-
+		QVector3D origin() const { return mOrigin; }
+		QVector3D normal() const { return mNormal; }
 
 	private:
 		QVector3D mOrigin;

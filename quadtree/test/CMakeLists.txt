@@ -1,6 +1,12 @@
 set(CTEST_PROJECT_NAME "CitySim")
 
-add_executable(quadtreetest quadtree.cpp ${TEST_BASE_SRC})
+set(SRC
+	quadtree.cpp
+	quadtreenodepointitem.cpp
+	${TEST_BASE_SRC}
+)
+
+add_executable(quadtreetest ${SRC})
 target_include_directories(quadtreetest
 	PRIVATE
 		${TEST_BASE_DIR}

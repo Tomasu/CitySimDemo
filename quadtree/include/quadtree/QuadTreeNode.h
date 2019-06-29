@@ -55,6 +55,17 @@ class QuadTreeNode
 
 		const std::vector<QuadTreeNodeItem*> &getItems() { return mItems; }
 
+		const QuadTreeNodeItem *itemAt(int idx) const
+		{
+			return mItems.at(idx);
+		}
+
+		template<typename T>
+		T *itemAs(int idx)
+		{
+			return dynamic_cast<T*>(mItems.at(idx));
+		}
+
 		QuadTreeNodeGeometry *getGeometry();
 
 		QuadTreeNodeGeometry *createGeometry();
@@ -66,6 +77,11 @@ class QuadTreeNode
 		bool hasParent() const { return mParent != nullptr; }
 
 		Point map(const Point &vec);
+
+		QuadTreeNode *topLeft() const { return mSubNodes[0]; }
+		QuadTreeNode *topRight() const { return mSubNodes[1]; }
+		QuadTreeNode *bottomLeft() const { return mSubNodes[2]; }
+		QuadTreeNode *bottomRight() const { return mSubNodes[3]; }
 
 		const std::vector<QuadTreeNode*> &subNodes() const { return mSubNodes; }
 

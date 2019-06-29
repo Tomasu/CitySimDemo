@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "quadtree/QuadTreeNodeItem.h"
+#include "quadtree/QuadTreeNodePointItem.h"
 #include "graph/TransportGraph.h"
 
 #include <QVector>
@@ -17,7 +17,7 @@
 
 class GeometryBuilder;
 
-class RoadData : public QuadTreeNodeItem
+class RoadData : public QuadTreeNodePointItem
 {
 	public:
 		explicit RoadData() = delete;
@@ -31,9 +31,6 @@ class RoadData : public QuadTreeNodeItem
 		void addFwdEdge(const TransportGraph::Edge &edge, const Point &begin, const Point &end);
 		void addRevEdge(const TransportGraph::Edge &edge, const Point &begin, const Point &end);
 
-		void addSegment(const Point &start, const Point &end);
-
-		std::string getName() { return mName; }
 		std::string getType() { return mType; }
 
 		uint32_t numFwdEdges() { return mFwdEdges.size(); }
@@ -42,26 +39,14 @@ class RoadData : public QuadTreeNodeItem
 		const std::vector<TransportGraph::Edge> &getFwdEdges() { return mFwdEdges; }
 		const std::vector<TransportGraph::Edge> &getRevEdges() { return mRevEdges; }
 
-		const std::vector<Point> &getPoints() const { return mPoints; }
-
-		std::vector<QuadTreeNodeItem*> split(const Rect &bounds, const Point &crossPoint) override;
-
-		bool isPartiallyContainedByRect(const Rect & rect) const override;
-
-		bool isContainedByRect(const Rect & rect) const override;
-
 		std::string toString() override;
 
 	private:
-		std::string mName;
 		std::string mType;
-
-		std::vector<Point> mPoints;
 
 		std::vector<TransportGraph::Edge> mFwdEdges;
 		std::vector<TransportGraph::Edge> mRevEdges;
 
-		void buildGeometry(GeometryBuilder *gb) override;
 };
 
 

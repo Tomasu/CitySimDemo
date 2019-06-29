@@ -19,11 +19,13 @@ project(citysim VERSION 0.1.0 LANGUAGES CXX)
 set(TEST_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test")
 set(TEST_BASE_SRC
 	${CMAKE_CURRENT_SOURCE_DIR}/test/catch.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
 )
 
 include(CTest)
 
 # Find the QtWidgets library
+find_package(Qt53DRender COMPONENTS REQUIRED Private)
 find_package(Qt5 CONFIG REQUIRED Core Gui Widgets 3DCore 3DExtras 3DRender 3DInput)
 
 find_package(GDAL REQUIRED)

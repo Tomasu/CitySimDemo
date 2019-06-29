@@ -11,6 +11,7 @@ set(SRC
 	src/Line.cpp
 	src/LineString.cpp
 	src/LogUtilsQt.cpp
+	src/Ray3D.cpp
 )
 
 add_library(core STATIC ${SRC})

@@ -218,7 +218,7 @@ template<>
 std::string AnyToString<double>(const double &d)
 {
 	char buff[1024];
-	snprintf(buff, sizeof(buff), "%-.2f", d);
+	snprintf(buff, sizeof(buff), "%-.8f", d);
 
 	return {buff};
 }
@@ -227,7 +227,7 @@ template<>
 std::string AnyToString<float>(const float &d)
 {
 	char buff[1024];
-	snprintf(buff, sizeof(buff), "%-.2f", d);
+	snprintf(buff, sizeof(buff), "%-.8f", d);
 
 	return {buff};
 }
@@ -237,6 +237,12 @@ template <>
 std::string AnyToString<std::string>(const std::string &str)
 {
 	return str;
+}
+
+template <>
+std::string AnyToString<time_t>(const time_t &time)
+{
+	return asctime(localtime(&time));
 }
 
 /**

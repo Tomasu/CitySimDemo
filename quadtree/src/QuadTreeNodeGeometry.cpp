@@ -158,11 +158,11 @@ QByteArray QuadTreeNodeGeometry::generateVertexData()
 		//line.append({0,0,0});
 
 		// get root node..
-		QuadTreeNode *ptr = mNode;
-		while(ptr->getParent() != nullptr)
-		{
-			ptr = ptr->getParent();
-		}
+// 		QuadTreeNode *ptr = mNode;
+// 		while(ptr->getParent() != nullptr)
+// 		{
+// 			ptr = ptr->getParent();
+// 		}
 
 		Point topLeft({0,0,0});
 		Point reposBr = Point(bounds().bottomRight() - bounds().topLeft());
@@ -175,10 +175,13 @@ QByteArray QuadTreeNodeGeometry::generateVertexData()
 
 		GeometryBuilder builder(bounds(), BASE_Z_OFFSET);
 
+		QColor hslColor = QColor::fromHsl(360.0f / (float)sId * mId, 255, 128);
+		log_debug("hslColor: h=%s s=%s l=%s", hslColor.hslHue(), hslColor.hslSaturation(), hslColor.lightness());
+
 		float cc1 = (1.0f / (sId+4)) * mId + 0.1f;
 		log_debug("%s cc: %s", mId, cc1);
 		QColor roadColor = QColor::fromRgbF(cc1,cc1,cc1);
-		builder.setColor(roadColor);
+		builder.setColor(hslColor/*roadColor*/);
 
 		//QVector4D gridColor = QVector4D::
 		float cc = 0.8;//(mId * 16.0f + 64.0f) / 256.0f;
@@ -216,6 +219,41 @@ QByteArray QuadTreeNodeGeometry::generateVertexData()
 		log_debug("%s items %s verts", mNode->getItemCount(), mNumVerticies);
 
 		const QByteArray &data = builder.getVerticies();
+
+		float *dptr = (float*)data.constData();
+		size_t num_floats = data.size() / sizeof(float);
+
+		float minX = std::numeric_limits<float>::max();
+		float maxX = std::numeric_limits<float>::min();
+		float minY = std::numeric_limits<float>::max();
+		float maxY = std::numeric_limits<float>::min();
+		for(size_t i = 0; i < num_floats; i+= VTX_STRIDE)
+		{
+			float x = dptr[i] + boundsOffset.left(), y = dptr[i+1] + boundsOffset.top();
+
+			if (x < minX)
+			{
+				minX = x;
+			}
+
+			if (x > maxX)
+			{
+				maxX = x;
+			}
+
+			if (y < minY)
+			{
+				minY = y;
+			}
+
+			if (y > maxY)
+			{
+				maxY = y;
+			}
+		}
+
+		log_debug("geom calc bounds: %s,%s %sx%s", minX, minY, maxX - minX, maxY - minY);
+		log_debug("node bounds: %s", mNode->bounds());
 
 		mVertexBuffer->setData(data);
 

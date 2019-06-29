@@ -70,6 +70,10 @@ class Rect
 
 		Size size() const { return Size(mWidth, mHeight); }
 
+		void adjustSize(float width, float height);
+
+		Rect sizeAdjusted(float width, float height) const;
+
 		void setWidth(float width);
 		void setHeight(float height);
 

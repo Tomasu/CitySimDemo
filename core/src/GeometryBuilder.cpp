@@ -374,7 +374,7 @@ void GeometryBuilder::addPoint(const Point &p, const QColor &color)
 	// position
 	mVertexBuilder->add(x);
 	mVertexBuilder->add(y);
-	mVertexBuilder->add(z);
+	mVertexBuilder->add(0.0f);
 
 	// normal
 	// mVertexBuilder->add(1.0f);

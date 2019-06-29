@@ -21,6 +21,8 @@ set(SRC
 	src/QuadTreeNodeGeometryFactory.cpp
 	include/quadtree/QuadTreeNodeEntity.h
 	src/QuadTreeNodeEntity.cpp
+	include/quadtree/QuadTreeNodePointItem.h
+	src/QuadTreeNodePointItem.cpp
 )
 
 add_library(quadtree STATIC ${SRC})

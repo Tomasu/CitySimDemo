@@ -33,8 +33,9 @@ QuadTreeNodeEntity::QuadTreeNodeEntity(QuadTreeNode *node, QWindow *mw, Qt3DCore
 // 	mScale = new Qt3DCore::QTransform;
 // 	mScale->setScale(scale);
 
+	log_debug("create new entity: %s", node->bounds());
+
 	mTranslation = new Qt3DCore::QTransform(this);
-	log_debug("entity bounds: %s", node->bounds());
 	QMatrix4x4 matrix; matrix.translate(node->bounds().left(), node->bounds().top());
 	matrix.scale(1.0f);
 	mTranslation->setMatrix(matrix);
@@ -69,10 +70,18 @@ QuadTreeNodeEntity::QuadTreeNodeEntity(QuadTreeNode *node, QWindow *mw, Qt3DCore
 
 void QuadTreeNodeEntity::objectPickerMoved(Qt3DRender::QPickEvent *ev)
 {
-	log_debug("node: %s", mNode->bounds());
-	log_debug("ev: pos: %s dist: %s", ev->position(), ev->distance());
-	log_debug("ev: local: %s", ev->localIntersection());
-	log_debug("ev: world: %s", ev->worldIntersection());
+	QVector3D localInt = ev->localIntersection();
+	QVector3D worldInt = ev->worldIntersection();
+	Rect bounds = mNode->bounds();
+	float y = bounds.height() - localInt.y(); // flip back?
+	float x = localInt.x();
+	if (x >= 0 && x < bounds.width() && y >= 0 && y < bounds.height())
+	{
+		log_debug("node: %s", mNode->bounds());
+		log_debug("ev: pos: %s dist: %s", ev->position(), ev->distance());
+		log_debug("ev: local: %sx%s", x, y);
+		log_debug("ev: world: %s", ev->worldIntersection());
+	}
 	// 		auto items = mNode->getItems();
 	// 		for (auto &item: items)
 	// 		{
@@ -92,6 +101,7 @@ void QuadTreeNodeEntity::objectPickerMoved(Qt3DRender::QPickEvent *ev)
 QuadTreeNodeEntity::~QuadTreeNodeEntity()
 {
 	//log_trace_exit();
+	log_debug("destroy entity: %s", mNode->bounds());
 }
 
 void QuadTreeNodeEntity::mousePositionChanged(Qt3DInput::QMouseEvent* ev)

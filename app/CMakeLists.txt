@@ -3,7 +3,8 @@
 
 
 # Find the QtWidgets library
-find_package(Qt5 CONFIG REQUIRED Core Gui Widgets 3DCore 3DExtras 3DRender 3DInput)
+find_package(Qt53DRender COMPONENTS Private)
+find_package(Qt5 CONFIG REQUIRED Core Gui Widgets 3DCore 3DExtras 3DRender 3DRender 3DInput)
 
 find_package(GDAL REQUIRED)
 
@@ -12,6 +13,8 @@ set(SRC
 	src/MainWindow.cpp
 	src/RoadData.cpp
 	src/RootEntity.cpp
+	src/ForwardRenderer.cpp
+	include/ForwardRenderer.h
 	src/aspect/FpsMonitor.cpp
 	include/aspect/FpsMonitor.h
 	src/aspect/FpsMonitorAspect.cpp
@@ -34,7 +37,10 @@ target_include_directories(citysim
 		${CMAKE_CURRENT_SOURCE_DIR}/src
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${GDAL_INCLUDE_DIRS}
+		${Qt53DRender_PRIVATE_INCLUDE_DIRS}
 )
+
+message(NOTICE incdir: "${Qt53DRender_PRIVATE_INCLUDE_DIRS}")
 
 add_dependencies(citysim core util quadtree geometryloader graph)
 target_compile_options(citysim PRIVATE -fPIC -Wall -Wextra)

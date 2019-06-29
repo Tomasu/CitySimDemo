@@ -12,7 +12,7 @@
 #include "quadtree/QuadTreeNodeGeometryRenderer.h"
 
 #include "util/Size.h"
-
+#include "util/Math.h"
 #include "util/LogUtils.h"
 #define TAG "QuadTreeNode"
 
@@ -65,39 +65,158 @@ bool QuadTreeNode::insertItem(QuadTreeNodeItem *item, bool noupdate)
 
 	const Rect &bounds = item->bounds();
 // if item's center is inside this rect
-	if (item->isContainedByRect(mBounds))
+//	if (mBounds.contains(item->bounds().topLeft()))
+//	if (mBounds.contains(item->bounds().center()))
+// 	if (item->isContainedByRect(mBounds))
+// 	{
+// 		if (!mHaveSubNodes && mItems.size() >= mNodeSplitCount)
+// 		{
+// 			mItems.push_back(item);
+//
+// 			splitNode();
+// 		}
+//
+// 		if (mHaveSubNodes)
+// 		{
+// 			for (auto &subNode: mSubNodes)
+// 			{
+// 				if (subNode->insertItem(item, noupdate))
+// 				{
+// 					return true;
+// 				}
+// 			}
+// 		}
+// 		else
+// 		{
+// 			//item->setOffset(-mBounds.topLeft());
+// 			mItems.push_back(item);
+//
+// 			if (!noupdate)
+// 			{
+// 				updateGeometry();
+// 			}
+// 			return true;
+// 		}
+// 	}
+
+	if (!item->isContainedByRect(mBounds))
 	{
-		if (!mHaveSubNodes && mItems.size() >= mNodeSplitCount)
-		{
-			mItems.push_back(item);
+		log_warn("item not contained by this node?!");
+		log_debug("item: %s", item);
+		log_debug("node: %s", this);
+		throw std::runtime_error("item not contained by this node?!");
+	}
 
-			splitNode();
-		}
+	std::list<QuadTreeNode*> queue;
+	queue.push_back(this);
 
-		if (mHaveSubNodes)
+	bool itemInserted = false;
+
+	while(!queue.empty())
+	{
+		QuadTreeNode *curNode = queue.back();
+		queue.pop_back();
+
+		if (item->isContainedByRect(curNode->bounds()))
 		{
-			for (auto &subNode: mSubNodes)
+			bool haveSubNodes = curNode->hasSubNodes();
+
+			if (haveSubNodes)
 			{
-				if (subNode->insertItem(item, noupdate))
+				std::vector<QuadTreeNode*> subNodes = curNode->subNodes();
+				if (item->isContainedByRect(subNodes[0]->bounds()))
 				{
-					return true;
+					queue.push_back(subNodes[0]);
+				}
+				else if (item->isContainedByRect(subNodes[1]->bounds()))
+				{
+					queue.push_back(subNodes[1]);
+				}
+				else if (item->isContainedByRect(subNodes[2]->bounds()))
+				{
+					queue.push_back(subNodes[2]);
+				}
+				else if (item->isContainedByRect(subNodes[3]->bounds()))
+				{
+					queue.push_back(subNodes[3]);
+				}
+				else
+				{
+					log_debug("item isn't contained by any single subnode... possible intersection");
+					std::vector<QuadTreeNodeItem*> splits = item->split(curNode->bounds(), curNode->bounds().center());
+					log_debug("splits: %s", splits);
+					log_debug(" into %s", curNode);
+
+					size_t numSplitsInserted = 0;
+					for (auto &split: splits)
+					{
+						// don't call insert on the root node, lets try so save some cycles!
+						for (auto &subNode: subNodes)
+						{
+							if (split->isContainedByRect(subNode->bounds()))
+							{
+								bool inserted = subNode->insertItem(split);
+								//subNode->mItems.push_back(split);
+								if (inserted)
+								{
+									numSplitsInserted++;
+								}
+								break;
+							}
+						}
+
+					}
+
+					escape_loop:
+
+					if (numSplitsInserted != splits.size())
+					{
+						log_error("failed to insert all splits?!");
+					}
+
+					if (curNode->getItemCount() >= curNode->mNodeSplitCount)
+					{
+						curNode->splitNode();
+					}
+
+					if (!noupdate)
+					{
+						curNode->updateGeometry();
+					}
+
+					itemInserted = numSplitsInserted == splits.size();
+					break;
 				}
 			}
-		}
-		else
-		{
-			//item->setOffset(-mBounds.topLeft());
-			mItems.push_back(item);
-
-			if (!noupdate)
+			else
 			{
-				updateGeometry();
+				uint32_t itemCount = curNode->getItemCount();
+
+				curNode->mItems.push_back(item);
+
+				if (itemCount >= curNode->mNodeSplitCount)
+				{
+					curNode->splitNode();
+				}
+
+				if (!noupdate)
+				{
+					curNode->updateGeometry();
+				}
+
+				itemInserted = true;
+				break;
 			}
-			return true;
 		}
 	}
 
-	return false;
+	if (!itemInserted)
+	{
+		log_error("failed to insert item: %s", item);
+		log_debug("node: %s", this);
+	}
+
+	return itemInserted;
 }
 
 void QuadTreeNode::updateGeometry()
@@ -203,16 +322,16 @@ void QuadTreeNode::splitNode()
 
 		std::vector<Point> newPoints;
 
-		auto it = queue.begin();
+		//auto it = queue.begin();
 		for (size_t i = 0; i < queue.size(); i++)
 		{
 			QuadTreeNodeItem *item = queue.at(i);
 
-			if (!item->isContainedByRect(nodeBounds))
-			{
-				log_error("item is not contained by bounds?! %s < %s", item->bounds(), nodeBounds);
-				throw std::runtime_error("item is not contained by bounds?!?!");
-			}
+ 			if (!item->isContainedByRect(nodeBounds))
+ 			{
+ 				log_error("item is not contained by bounds?! %s < %s", item->bounds(), nodeBounds);
+ 				throw std::runtime_error("item is not contained by bounds?!?!");
+ 			}
 
 			bool itemInserted = false;
 
@@ -256,58 +375,83 @@ void QuadTreeNode::splitNode()
 				containedStr += "bottom right";
 			}
 
-			if (!containedStr.empty())
+			if (itemFullyContained)
 			{
-				log_debug("is contained by: %s", containedStr);
+				log_debug("item is contained by: %s > %s", containedStr, item->getName());
 			}
 			else
 			{
-				log_error("somehow this item isnt contained by any sub node?!?!?!");
+				log_error("item probably needs split", item->getName());
 				log_debug("item: %s", item);
 				log_debug("nodes: %s %s %s %s", topLeft, topRight, bottomLeft, bottomRight);
-				//throw std::runtime_error("WAT");
-			}
 
-			if (itemFullyContained)
-			{
-				log_debug("item is fully contained...");
-			}
-			else if (itemIntersects(bottomRightNode, item)
-				|| itemIntersects(bottomLeftNode, item)
-				|| itemIntersects(topRightNode, item)
-				|| itemIntersects(topLeftNode, item))
-			{
-				// if this item intersects and is not entirely contained in any sub node
-				//  split item into separate pieces, append to queue and skip to next item.
+				bool itemIntersectsBottomRight = itemIntersects(bottomRightNode, item);
+				bool itemIntersectsBottomLeft = itemIntersects(bottomLeftNode, item);
+				bool itemIntersectsTopRight = itemIntersects(topRightNode, item);
+				bool itemIntersectsTopLeft = itemIntersects(topLeftNode, item);
 
-				log_debug("new intersection...");
-				//log_debug("item intersected with a new subnode during node split. splitting and appending to queue...");
-
-				log_debug("old item: %s", item->toString());
-
-				std::vector<QuadTreeNodeItem*> splits = item->split(nodeBounds, nodeCenter);
-
-				log_debug("got %s splits: %s", splits.size(), splits);
-
-				if (splits.size() < 2)
+				log_debug("br=%s bl=%s tr=%s tl=%s", itemIntersectsBottomRight, itemIntersectsBottomLeft, itemIntersectsTopRight, itemIntersectsTopLeft);
+				if (itemIntersectsBottomRight
+					|| itemIntersectsBottomLeft
+					|| itemIntersectsTopRight
+					|| itemIntersectsTopLeft)
 				{
-					log_debug("got less than 2 splits, this is an error >:(");
-					throw std::runtime_error("WAH!");
+					// if this item intersects and is not entirely contained in any sub node
+					//  split item into separate pieces, append to queue and skip to next item.
+
+					log_debug("new intersection...");
+					//log_debug("item intersected with a new subnode during node split. splitting and appending to queue...");
+
+					log_debug("old item: %s", item->toString());
+
+					std::vector<QuadTreeNodeItem*> splits = item->split(nodeBounds, nodeCenter);
+
+					log_debug("got %s splits: %s", splits.size(), splits);
+
+					if (splits.size() < 2)
+					{
+						log_debug("got less than 2 splits, this is an error >:(");
+						throw std::runtime_error("WAH!");
+					}
+
+					float origLen = item->length();
+					float newLen = 0.0f;
+
+					for (auto split: splits)
+					{
+						newLen += split->length();
+					}
+
+					float diff = fabsf(newLen - origLen);
+					if (diff > 0.001)
+					{
+						log_debug("length mismatch: old=%s new=%s diff=%s", origLen, newLen, diff);
+						log_debug("road: %s", item);
+						throw std::runtime_error("length mismatch");
+					}
+					// remove this item from queue and advance to next item.
+					//it = queue.erase(it);
+
+					// append new items to queue.
+					//queue.insert(queue.end(), splits.begin(), splits.end());
+// 					for (auto split: splits)
+// 					{
+// 						queue.push_back(split);
+// 					}
+					int ii = i;
+					for (auto split: splits)
+					{
+						queue.insert(queue.begin()+ii+1, split);
+						ii++;
+					}
+
+					continue;
 				}
-
-				// remove this item from queue and advance to next item.
-				//it = queue.erase(it);
-
-				// append new items to queue.
-				queue.insert(queue.end(), splits.begin(), splits.end());
-// 				int ii = i;
-// 				for (auto split: splits)
-// 				{
-// 					queue.insert(ii+1, split);
-// 					ii++;
-// 				}
-
-				continue;
+				else
+				{
+					log_warn("item not fully contained but also doesn't intersect??");
+					throw std::runtime_error("wat?");
+				}
 			}
 
 			for (auto &subNode: mSubNodes)
@@ -328,7 +472,10 @@ void QuadTreeNode::splitNode()
 			if (!itemInserted)
 			{
 				//it++;
-				log_debug("failed to insert line???");
+				log_warn("failed to insert item???");
+				log_debug("item: %s", item);
+				log_debug("bounds: %s %s %s %s", mSubNodes[0]->bounds(), mSubNodes[1]->bounds(), mSubNodes[2]->bounds(), mSubNodes[3]->bounds());
+				throw std::runtime_error("failed to insert item???");
 			}
 		}
 
@@ -338,7 +485,8 @@ void QuadTreeNode::splitNode()
 		//  if mItems gets modified outside of this method in another thread
 		//  we'll loose that modification.
 		// FIXME: we definitely need to keep from running splitNode more than once at a time.
-		mItems = queue;
+		//mItems = queue;
+		mItems.clear();
 
 		log_debug("split node: %s end: numItems=%s", mBounds, mItems.size());
 
@@ -388,7 +536,7 @@ bool QuadTreeNode::intersects(const Rect& rect)
 
 void QuadTreeNode::dumpNode(const std::string &prefix)
 {
-	log_debug("%s%s", prefix.c_str(), bounds());
+	log_debug("%s%s items=%s", prefix.c_str(), bounds(), mItems.size());
 
 	for (auto *node: subNodes())
 	{
@@ -396,4 +544,14 @@ void QuadTreeNode::dumpNode(const std::string &prefix)
 	}
 }
 
+#include <sstream>
+template<>
+std::string AnyToString<QuadTreeNode*>(QuadTreeNode * const &node)
+{
+	std::stringstream sstr;
+
+	sstr << "Node{bounds=" << node->bounds() << ", subNodes=" << node->subNodes().size() << ", items=" << node->getItemCount() << "}";
+
+	return sstr.str();
+}
 

@@ -210,6 +210,18 @@ bool Rect::operator!=(const Rect& other) const
 		|| !fuzzyFloatCompare(mHeight, other.mHeight);
 }
 
+Rect Rect::sizeAdjusted(float width, float height) const
+{
+	return { mX, mY, mWidth - width, mHeight - height };
+}
+
+void Rect::adjustSize(float width, float height)
+{
+	mWidth -= width;
+	mHeight -= height;
+}
+
+
 void Rect::setHeight(float height)
 {
 	mHeight = height;
@@ -223,10 +235,11 @@ void Rect::setWidth(float width)
 
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 std::ostream & operator << (std::ostream &out, const Rect &c)
 {
-	out << std::fixed << "Rect{" << c.mX << "," << c.mY << " " << c.mWidth << "x" << c.mHeight << "}";
+	out << std::fixed << std::setprecision(8) << "Rect{" << c.mX << "," << c.mY << " " << c.mWidth << "x" << c.mHeight << "}";
 	return out;
 }
 
@@ -235,6 +248,6 @@ std::string AnyToString<Rect>(const Rect &rect)
 {
 	std::stringstream sstr;
 
-	sstr << std::fixed << "Rect{" << rect.left() << "," << rect.top() << " " << rect.width() << "x" << rect.height() << "}";
+	sstr << std::fixed << std::setprecision(8) << "Rect{" << rect.left() << "," << rect.top() << " " << rect.width() << "x" << rect.height() << "}";
 	return sstr.str();
 }

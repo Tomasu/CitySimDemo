@@ -196,6 +196,14 @@ Line::IntersectType Line::intersect(const Line& other, Point* I0, Point* I1)
 	return Intersect;
 }
 
+float Line::length() const
+{
+	Point diff = mEnd - mStart;
+
+	return sqrtf(diff.x() * diff.x() + diff.y() * diff.y() + diff.z() * diff.z());
+}
+
+
 #include <ostream>
 #include <iomanip>
 

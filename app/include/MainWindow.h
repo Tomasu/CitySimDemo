@@ -16,6 +16,7 @@ class QuadTree;
 class TransportGraph;
 class QuadTreeNodeMapper;
 class QuadTreeNodeEntityFactory;
+class ForwardRenderer;
 
 namespace Qt3DInput {
 	class QMouseDevice;
@@ -41,6 +42,7 @@ namespace Qt3DRender {
 namespace Qt3DExtras {
 	class QForwardRenderer;
 	class QAbstractCameraController;
+	class QPlaneMesh;
 }
 
 namespace Qt3DLogic {
@@ -76,7 +78,7 @@ class MainWindow : public QWindow
 
 		// Renderer
 		Qt3DRender::QRenderSettings *mRenderSettings;
-		Qt3DExtras::QForwardRenderer *mForwardRenderer;
+		ForwardRenderer *mForwardRenderer;
 		Qt3DRender::QCamera *mCamera;
 		Qt3DExtras::QAbstractCameraController *mCamController;
 		Qt3DRender::QScreenRayCaster *mRayCaster;
@@ -95,6 +97,7 @@ class MainWindow : public QWindow
 		Qt3DCore::QTransform *mRootTransform;
 
 		Qt3DCore::QEntity *mMapEntity;
+		Qt3DExtras::QPlaneMesh *mMapMesh;
 		Qt3DCore::QTransform *mMapTransform;
 
 		// other

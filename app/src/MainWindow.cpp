@@ -3,6 +3,7 @@
 //
 
 #include "MainWindow.h"
+#include "ForwardRenderer.h"
 #include "graph/TransportGraph.h"
 
 #include "quadtree/QuadTreeNodeEntityFactory.h"
@@ -16,6 +17,7 @@
 #include "RootEntity.h"
 
 #include "core/Constants.h"
+#include "util/Plane3D.h"
 
 #include <QtCore/QFileInfo>
 #include <QtCore/QDir>
@@ -54,8 +56,12 @@
 #include <Qt3DExtras/QOrbitCameraController>
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QForwardRenderer>
+#include <Qt3DExtras/QPlaneMesh>
+#include <Qt3DExtras/QDiffuseSpecularMaterial>
 
 #include <Qt3DRender/QScreenRayCaster>
+
+#include "core/Ray3D.h"
 
 #include <ogrsf_frmts.h>
 
@@ -129,6 +135,10 @@ Qt3DCore::QEntity *loadShp(const QString &path);
 MainWindow::MainWindow(const QString &path)
 	: mRoadsQuadTree{nullptr}
 {
+	log_debug("BEGIN AT %s", time(NULL));
+
+	mMapMesh = nullptr;
+
 	mInitialized = false;
 	mMouseMoved = true;
 
@@ -144,11 +154,12 @@ MainWindow::MainWindow(const QString &path)
 	mLogicAspect = new QLogicAspect;
 	mRenderSettings = new QRenderSettings;
 	mRenderSettings->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::BoundingVolumePicking);
-	mRenderSettings->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::AllPicks);
-	mForwardRenderer = new QForwardRenderer;
+	mRenderSettings->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::NearestPick);
+	mRenderSettings->pickingSettings()->setFaceOrientationPickingMode(Qt3DRender::QPickingSettings::FrontFace);
 
+	mForwardRenderer = new ForwardRenderer;
 	mForwardRenderer->setEnabled(true);
-	mForwardRenderer->setFrustumCullingEnabled(false);
+	mForwardRenderer->setFrustumCullingEnabled(true);
 
 	mCamera = createCamera(mRootEntity);
 	mCamController = createCameraController(mRootEntity, mCamera);
@@ -196,15 +207,20 @@ MainWindow::MainWindow(const QString &path)
 	mMouseHandler->setSourceDevice(mMouseDevice);
 	QObject::connect(mMouseHandler, &QMouseHandler::positionChanged, this, &MainWindow::mousePositionChanged);
 
-// 	mRayCaster = new QScreenRayCaster(mRootEntity);
-// 	mRayCaster->setRunMode(Qt3DRender::QAbstractRayCaster::Continuous);
-// 	mRootEntity->addComponent(mRayCaster);
-//
+	createScene(mRootEntity, path);
+
+	mRayCaster = new QScreenRayCaster(mRootEntity);
+	mRayCaster->setRunMode(Qt3DRender::QAbstractRayCaster::SingleShot);
+	//mRayCaster->setFilterMode(Qt3DRender::QAbstractRayCaster::AcceptAllMatchingLayers);
+	//mRootEntity->addComponent(mRayCaster);
+
 // 	QObject::connect(mRayCaster, &QScreenRayCaster::hitsChanged, this, [&](const Qt3DRender::QAbstractRayCaster::Hits &hits) {
+// 		log_debug("hits: %s", hits.size());
+//
 // 		for (Qt3DRender::QRayCasterHit hit: hits)
 // 		{
 // 			QVector3D worldIntersection = hit.worldIntersection();
-// 			QVector3D local = hit.localIntersection();
+//
 // 			QuadTreeNodeEntity *nodeEntity = dynamic_cast<QuadTreeNodeEntity*>(hit.entity());
 // 			if (nodeEntity == nullptr)
 // 			{
@@ -212,14 +228,25 @@ MainWindow::MainWindow(const QString &path)
 // 				continue;
 // 			}
 //
-// 			if (nodeEntity->node()->bounds().contains(local.x(), local.y()))
+// 			if (nodeEntity->node()->hasSubNodes())
 // 			{
-// 				log_debug("hit: %s %s", nodeEntity->node()->bounds(), hit.localIntersection());
+// 				continue;
+// 			}
+//
+// 			QVector3D local = hit.localIntersection();
+//
+// 			log_debug("world: %s, local: %s", worldIntersection, local);
+//
+// 			Rect nodeBounds = nodeEntity->node()->bounds();
+// 			log_debug("bounds: %s", nodeBounds);
+//
+// 			if (local.x() >= 0 && local.x() < nodeBounds.width() && local.y() >= 0 && local.y() < nodeBounds.height())
+// 			{
+// 				log_debug("hit: %s %s", nodeEntity->node()->bounds(), local);
 // 			}
 // 		}
 // 	});
-
-	createScene(mRootEntity, path);
+	//mRayCaster->setEnabled(true);
 
 	//mCamera->viewEntity(mMapEntity);
 	mRootEntity->addComponent(mMouseHandler);
@@ -394,7 +421,7 @@ void MainWindow::frameActionTriggered(float dt)
 	QVector3D minMinusMax = minProj - maxProj;
 	log_debug("minMinusMax: %s", minMinusMax);
 
-	QMatrix4x4 upMvM = mapMatrix * camViewMatrix;
+	QMatrix4x4 upMvM = /*mapMatrix * */ camViewMatrix;
 	QVector3D unproj = upMousePos.unproject(upMvM, camProjMatrix, viewport);
 	QVector3D unprojFar = upMousePosFar.unproject(upMvM, camProjMatrix, viewport);
 
@@ -406,24 +433,46 @@ void MainWindow::frameActionTriggered(float dt)
 	float realz = 1.0f / (znear-zfar) * -camZ;
 	log_debug("realz: %s", realz);
 
-	QVector3D rempos = QVector3D{(float)mMousePos.x(), height() -(float)mMousePos.y(), realz};
-	QVector3D reunproj = rempos.unproject(camViewMatrix, camProjMatrix, viewport);
-	log_debug("reunproj: %s %s", reunproj, mapMatrix * reunproj);
-
 	QVector3D unprojfff = (unprojDiff / (znear-zfar)) * -mCamera->position().z();
 	log_debug("unprojfff: %s", unprojfff);
 
 	//unprojfff.setZ(mCamera->position().z());
-	QVector4D unprojTrans = mapMatrix * QVector4D{unprojfff, 1.0f};//(rootMatrix*mapMatrix.inverted()).map(unproj);
+	QVector4D unprojTrans = mapMatrix.inverted() * QVector4D{unprojfff, 1.0f};//(rootMatrix*mapMatrix.inverted()).map(unproj);
 	log_debug("unprojTrans: %s", unprojTrans);
 
 	QVector3D unprojTrans3D = unprojTrans.toVector3D();
 	Point unprojPt = {unprojTrans3D.x(), unprojTrans3D.y(), unprojTrans3D.z()};
+//	Point unprojPt = {unprojfff.x(), unprojfff.y(), unprojfff.z()};
 	QuadTreeNode *node = mRoadsQuadTree->findNode(unprojPt);
 	if (node != nullptr)
 	{
 		log_debug("\t-> in node %s", node->bounds());
 	}
+
+
+	QVector3D nearPos = QVector3D(mouseVec4d.x(), mouseVec4d.y(), 0.0f);
+	nearPos = nearPos.unproject(viewMatrix, camProjMatrix, viewport);
+	QVector3D farPos = QVector3D(mouseVec4d.x(), mouseVec4d.y(), 1.0f);
+	farPos = farPos.unproject(viewMatrix, camProjMatrix, viewport);
+
+    Ray3D ray = Ray3D(nearPos,
+			 (farPos - nearPos).normalized(),
+			 (farPos - nearPos).length());
+
+	 Plane3D plane = Plane3D({0,0,100000,100000});
+
+	QVector3D intersect = ray.intersect(plane);
+	QVector3D scaled = intersect * mapMatrix.inverted();
+
+	log_debug("plane intersect: %s -> %s", intersect, scaled);
+
+
+	node = mRoadsQuadTree->findNode({scaled.x(), scaled.y()});
+	if (node != nullptr)
+	{
+		log_debug("\t-> in node %s", node->bounds());
+	}
+
 	// 		QuadTreeNode *node = mRoadsQuadTree->findNode(mapped.toVector3D());
 	// 		if (node != nullptr)
 	// 		{
@@ -448,10 +497,10 @@ void MainWindow::mousePositionChanged(Qt3DInput::QMouseEvent* ev)
 	//if(0)
 	{
 		mMousePos = QPoint{ev->x(), ev->y()};
-		//mMouseMoved = true;
+		mMouseMoved = true;
 
-		//mRayCaster->trigger(mMousePos);
 		//mRayCaster->setPosition(mMousePos);
+		//mRayCaster->trigger(mMousePos);
 
 	}
 }
@@ -513,9 +562,79 @@ bool hasReverseEdge(const char *str)
 		|| strcmp(str, DIGITZ_2R_TRUE_ONEWAY_REV) == 0;
 }
 
+static Rect measureBounds(OGRLayer *layer, OGRCoordinateTransformation *transform)
+{
+	layer->ResetReading();
+
+	OGRFeature *poFeature = nullptr;
+
+	float minX = std::numeric_limits<float>::max();
+	float maxX = std::numeric_limits<float>::min();
+	float minY = std::numeric_limits<float>::max();
+	float maxY = std::numeric_limits<float>::min();
+
+	while ((poFeature = layer->GetNextFeature()))
+	{
+		OGRGeometry *geometry = poFeature->GetGeometryRef();
+		if (geometry == nullptr)
+		{
+			log_error("no geometry?");
+			continue;
+		}
+
+		geometry->transform(transform);
+
+		OGRwkbGeometryType type = wkbFlatten(geometry->getGeometryType());
+
+		if (type != wkbLineString)
+		{
+			log_warn("WARNING: unknown feature type: %s", geometry->getGeometryName());
+			continue;
+		}
+
+		OGRLineString *lineString = geometry->toLineString();
+
+		int numPoints = lineString->getNumPoints();
+		for (int i = 0; i < numPoints; ++i)
+		{
+			OGRPoint pt;
+			lineString->getPoint(i, &pt);
+
+			if (pt.getX() < minX)
+			{
+				minX = pt.getX();
+			}
+
+			if (pt.getX() > maxX)
+			{
+				maxX = pt.getX();
+			}
+
+			if (pt.getY() < minY)
+			{
+				minY = pt.getY();
+			}
+
+			if (pt.getY() > maxY)
+			{
+				maxY = pt.getY();
+			}
+		}
+	}
+
+	if (minX < 0|| minY < 0)
+	{
+		log_warn("min bounds negative?");
+	}
+
+	return Rect(minX, minY, maxX-minX, maxY-minY);
+}
+
 void MainWindow::buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *dataset)
 {
 	log_trace_enter();
+
+	log_debug("layers: %s", dataset->GetLayerCount());
 
 	OGRLayer *layer = dataset->GetLayer(0);
 
@@ -536,7 +655,7 @@ void MainWindow::buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *da
 	OGRCoordinateTransformation *coordTransform = OGRCreateCoordinateTransformation(layerSpatialRef, mercSrs);
 
 	OGREnvelope envelope;
-	OGRErr extret = layer->GetExtent(&envelope, 1);
+	OGRErr extret = layer->GetExtent(&envelope, TRUE);
 	if (extret != OGRERR_NONE)
 	{
 		log_error("failed to get layer extent :(");
@@ -549,10 +668,20 @@ void MainWindow::buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *da
 
 	coordTransform->Transform(2, extentX, extentY, extentZ );
 
-	Rect extRect = Rect(Point(extentX[0], extentY[0]), Point(extentX[1], extentY[1]));
+	Rect measuredBounds = measureBounds(layer, coordTransform);
+	layer->ResetReading();
+
+	log_debug("measured: %s", measuredBounds);
+
+	Rect extRect = measuredBounds;//Rect(Point(extentX[0], extentY[0]), Point(extentX[1], extentY[1]));
 
 	log_debug("extRect: %s", extRect);
 
+	if (mMapMesh != nullptr)
+	{
+		mMapMesh->setWidth(extRect.width()*4);
+		mMapMesh->setHeight(extRect.height()*4);
+	}
 
 	Rect adjRect = extRect;
 	adjRect.moveTo(0, 0);
@@ -640,6 +769,13 @@ void MainWindow::buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *da
 			Point qsp = Point(sx, sy, sz) - offsetp;
 			Point qep = Point(ex, ey, ez) - offsetp;
 
+			if (qsp.x() < 0 || qsp.y() < 0 || qep.x() < 0 || qep.y() < 0)
+			{
+				log_warn("feature %s segment %s outside of extent? %s %s", nameAbPr, i, qsp, qep);
+				continue;
+			}
+
+
 			auto vtx1it = vertices.find(std::make_pair(qsp.x(), qsp.y()));
 			if (vtx1it == vertices.end())
 			{
@@ -678,8 +814,10 @@ void MainWindow::buildRoadGraph(Qt3DCore::QEntity *parentEntity, GDALDataset *da
 
 			if (isReverseEdge(digitz))
 			{
-				log_debug("got rev road: %s %s", nameAbPr, digitz);
-				itemData->addSegment(qep, qsp);
+				//log_debug("got rev road: %s %s", nameAbPr, digitz);
+				//itemData->addSegment(qep, qsp);
+				itemData->addSegment(qsp, qep);
+
 			}
 			else
 			{
@@ -739,7 +877,7 @@ void MainWindow::createScene(Qt3DCore::QEntity *rootEntity, const QString &path)
 	lightEntity->addComponent(light);
 
 	Qt3DCore::QTransform *lightTransform = new Qt3DCore::QTransform(lightEntity);
-	lightTransform->setTranslation(mCamera->position());
+	//lightTransform->setTranslation(mCamera->position());
 	lightEntity->addComponent(lightTransform);
 
 	FpsMonitorComponent *fpsMonitor = new FpsMonitorComponent(rootEntity);
@@ -750,34 +888,60 @@ void MainWindow::createScene(Qt3DCore::QEntity *rootEntity, const QString &path)
 
 	rootEntity->addComponent(fpsMonitor);
 
+
 	mMapEntity = new QEntity(rootEntity);
 	mMapEntity->setObjectName("mapEntity");
 	mMapTransform = new Qt3DCore::QTransform(mMapEntity);
-	mMapTransform->setScale(0.2f);
+	mMapTransform->setScale(0.05f);
 	mMapEntity->addComponent(mMapTransform);
 
-	Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(mMapEntity);
-	picker->setHoverEnabled(true);
-	picker->setDragEnabled(true);
+	QEntity *planeEntity = new QEntity(mMapEntity);
 
-	QObject::connect(picker, &QObjectPicker::moved, this, [&](Qt3DRender::QPickEvent *ev) {
-		log_debug("ev: pos: %s dist: %s", ev->position(), ev->distance());
-		log_debug("ev: local: %s", ev->localIntersection());
-		log_debug("ev: world: %s", mMapTransform->matrix().inverted() * ev->worldIntersection());
+	QPhongMaterial *meshMaterial = new QPhongMaterial(planeEntity);
+	meshMaterial->setAmbient(Qt::gray);
+	meshMaterial->setDiffuse(Qt::lightGray);
+	//meshMaterial->setSpecular(Qt::black);
+	planeEntity->addComponent(meshMaterial);
 
-		QMatrix4x4 mm = (mCamera->viewMatrix() * mMapTransform->matrix()).inverted();
-		log_debug("ev world-mod: %s", mm * ev->worldIntersection());
+	mMapMesh = new Qt3DExtras::QPlaneMesh(planeEntity);
+	planeEntity->addComponent(mMapMesh);
 
-		QVector3D locInt = ev->localIntersection();
-		QuadTreeNode *node = mRoadsQuadTree->findNode(Point{locInt.x(), locInt.y(), locInt.z()});
-		if (node != nullptr)
-		{
-			log_debug("got node! %s", node->bounds());
-		}
+	Qt3DCore::QTransform *planeRotate = new Qt3DCore::QTransform(planeEntity);
+	planeRotate->setRotationX(90.0f);
+	planeEntity->addComponent(planeRotate);
 
-	});
+// 	Qt3DCore::QTransform *planeTranslate = new Qt3DCore::QTransform(planeEntity);
+// 	QMatrix4x4 planeMatrix; planeMatrix.translate(0.0f, 10000.0f, 0.0f);
+// 	planeTranslate->setMatrix(planeMatrix);
+// 	planeEntity->addComponent(planeTranslate);
 
-	mMapEntity->addComponent(picker);
+	planeRotate = new Qt3DCore::QTransform(planeEntity);
+	planeRotate->setRotationX(90.0f);
+	planeRotate->setTranslation({0.0f, 0.0f, -40.0f});
+	planeEntity->addComponent(planeRotate);
+
+// 	Qt3DRender::QObjectPicker *picker = new Qt3DRender::QObjectPicker(mMapEntity);
+// 	picker->setHoverEnabled(true);
+// 	picker->setDragEnabled(true);
+//
+// 	QObject::connect(picker, &QObjectPicker::moved, this, [&](Qt3DRender::QPickEvent *ev) {
+// 		log_debug("ev: pos: %s dist: %s", ev->position(), ev->distance());
+// 		log_debug("ev: local: %s", ev->localIntersection());
+// 		log_debug("ev: world: %s", mMapTransform->matrix().inverted() * ev->worldIntersection());
+//
+// 		QMatrix4x4 mm = (mCamera->viewMatrix() * mMapTransform->matrix()).inverted();
+// 		log_debug("ev world-mod: %s", mm * ev->worldIntersection());
+//
+// 		QVector3D locInt = ev->localIntersection();
+// 		QuadTreeNode *node = mRoadsQuadTree->findNode(Point{locInt.x(), locInt.y(), locInt.z()});
+// 		if (node != nullptr)
+// 		{
+// 			log_debug("got node! %s", node->bounds());
+// 		}
+//
+// 	});
+//
+// 	mMapEntity->addComponent(picker);
 
 	mEntityFactory = new MainQuadTreeNodeEntityFactory(this, mMapEntity);
 
@@ -926,7 +1090,7 @@ QCamera *MainWindow::createCamera(Qt3DCore::QEntity *rootEntity)
 	QCamera *cameraEntity = new QCamera(rootEntity);
 	cameraEntity->setObjectName("camera");
 	cameraEntity->lens()->setPerspectiveProjection(45.0f, 1024.0f/768.0f, Z_NEAR, Z_FAR);
-	cameraEntity->setPosition(QVector3D(0, 0, 4000.0f));
+	cameraEntity->setPosition(QVector3D(0, 0, 2000.0f));
 	cameraEntity->setUpVector(QVector3D(0, 1, 0));
 	cameraEntity->setViewCenter(QVector3D(0, 0, 0));
 

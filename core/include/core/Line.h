@@ -27,6 +27,8 @@ class Line
 
 		bool contains(const Point &pt) const;
 
+		float length() const;
+
 	private:
 		Point mStart;
 		Point mEnd;
